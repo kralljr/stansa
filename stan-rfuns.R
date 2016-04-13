@@ -2,12 +2,13 @@
 #' Function to run stan using lambda constraints
 #' 
 #' \code{SAstan} creates .stan file for Source apportionment with constraints
-#' 
+#'
+#' @param wd directory for basic stan code
 #' @param dat matrix of days (or commutes) by constituents
 #' @param lamcon matrix of sources by constituents with NA for unconstrained, 0's and 1's as in Park et al. 2002
 #' @param file1 output file name
 #' @export
-SAstan <- function(dat, lamcon, file1 = "acesa-out.stan") {
+SAstan <- function(wd, dat, lamcon, file1 = "acesa-out.stan") {
   identifySA(lamcon)
 
   # Add in transformed data
@@ -16,7 +17,7 @@ SAstan <- function(dat, lamcon, file1 = "acesa-out.stan") {
   model1 <- modelF(lamcon)
 
 
-  stancode <- readLines("acesa.stan")
+  stancode <- readLines(file.path(wd, "acesa.stan"))
   # find where to split
   li <- grep("//hold", stancode)
 
