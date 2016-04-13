@@ -39,19 +39,20 @@ SAstan <- function(wd, dat, lamcon, file1 = "acesa-out.stan") {
 rowcol <- function(lamcon) {
   whAR <- which(is.na(lamcon), arr.ind = T)
   K <- nrow(whAR)
+  # Transformed lamcon, lambda for model
   L <- nrow(lamcon)
   P <- ncol(lamcon)
-  rm1 <- "row_mark["
   cm1 <- "col_mark["
+  rm1 <- "row_mark["
 
   # Specify integers
-  out <- paste0("  int<lower=1,upper=", L, "> row_mark[", K, "];\n")
-  out2 <- paste0("  int<lower=1,upper=", P, "> col_mark[", K, "];\n")
-  out <- paste0(out, out2)
+  out <- paste0("  int<lower=1,upper=", L, "> col_mark[", K, "];\n")
+  out2 <- paste0("  int<lower=1,upper=", P, "> row_mark[", K, "];\n")
+  out <- paste0(out2, out)
   # Specify each element
   for(k in 1 : K) {
-    rmhold <- paste0(rm1, k, "] <- ", whAR[k, 1], "; ")
-    cmhold <- paste0(cm1, k, "] <- ", whAR[k, 2], ";") 
+    rmhold <- paste0(rm1, k, "] <- ", whAR[k, 2], "; ")
+    cmhold <- paste0(cm1, k, "] <- ", whAR[k, 1], ";") 
     out <- paste0(out, "  ", rmhold, cmhold, "\n")
   }
 
@@ -74,7 +75,7 @@ modelF <- function(lamcon) {
   model <- ""
   for(i in 1 : nrow(whAR)) {
     keep1 <- whAR[i, ]
-    index1 <- paste(keep1, collapse = ", ")
+    index1 <- paste(keep1[c(2, 1)], collapse = ", ")
     val1 <- lamcon[keep1[1], keep1[2]]
     model <- paste0(model, start0, index1, mid0, val1, ";\n") 
   }
