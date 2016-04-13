@@ -8,7 +8,7 @@ data {
 
 //hold
 parameters {
-  vector[K] Fvec;
+  vector<lower=0>[K] Fvec;
   matrix<lower=0>[L,T] G; // source contributions
   vector<lower=0>[P] phi2; // variances of X
   vector[L] mu; // means of G
