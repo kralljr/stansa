@@ -17,7 +17,7 @@ parameters {
 
 transformed parameters {
   matrix[P,T] theta; // Mean for x
-  matrix[P,L] F; // Source profiles
+  matrix<lower=0>[P,L] F; // Source profiles
   for (k in 1:K)
     F[row_mark[k],col_mark[k]] <- Fvec[k];
   //hold 
