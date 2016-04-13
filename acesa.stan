@@ -18,7 +18,7 @@ parameters {
 
 transformed parameters {
   matrix[P,T] theta; // Mean for x
-  theta <- G;
+  theta <- F * G;
   // matrix<lower=0>[L,L] sigma; //Variance for G
   // sigma <- diag_matrix(sigma2); 
 }
