@@ -10,7 +10,6 @@ data {
 parameters {
   vector[K] Fvec;
   matrix<lower=0>[L,T] G; // source contributions
-  // matrix<lower=0>[P,L] F; // source profiles
   vector<lower=0>[P] phi2; // variances of X
   vector[L] mu; // means of G
   vector<lower=0>[L] sigma2; // variances of G
@@ -18,15 +17,14 @@ parameters {
 
 transformed parameters {
   matrix[P,T] theta; // Mean for x
-  theta <- F * G;
-  // matrix<lower=0>[L,L] sigma; //Variance for G
-  // sigma <- diag_matrix(sigma2); 
+  matrix[P,L] F; // Source profiles
+  for (k in 1:K)
+    F[row_mark[k],col_mark[k]] <- Fvec[k];
+  //hold 
+  theta <- F * G;  
 }
 
 model {
-  matrix[P,L] F;
-  F[row_mark,col_mark] <- Fvec;
-  //hold 
   mu ~ normal(0, 1000); // Nikolov et al. 2007
   sigma2 ~ inv_gamma(0.01, 0.01); // Nikolov et al. 2007
   for (l in 1:L)
