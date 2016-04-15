@@ -4,12 +4,11 @@
 #' \code{SAstan} creates .stan file for Source apportionment with constraints
 #'
 #' @param wd directory for basic stan code
-#' @param dat matrix of days (or commutes) by constituents
 #' @param lamcon matrix of sources by constituents with NA for unconstrained, 0's and 1's as in Park et al. 2002
 #' @param check TRUE or FALSE indicating whether to check identifiability conditions
 #' @param file1 output file name
 #' @export
-SAstan <- function(wd, dat, lamcon, check = T, file1 = "acesa-out.stan") {
+SAstan <- function(wd, lamcon, check = T, file1 = "acesa-out.stan") {
   if(check) { 
     identifySA(lamcon)
   }
