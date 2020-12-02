@@ -29,7 +29,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
   }
 
   # Get necessary input
-  sources <- dat$dat$f$source
+  sources <- stanres$dat$f$source
   mat1 <- mat1fun(stanres, sources)
 
 
@@ -64,10 +64,10 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 #' @export
 mat1fun <- function(stanres, sources) {
   # get constraint names for nVF
-  P <- dat$standat$P
-  L <- dat$standat$L
+  P <- stanres$standat$P
+  L <- stanres$standat$L
 
-  zeromat <- dat$standat$zeromat
+  zeromat <- stanres$standat$zeromat
   mat1 <- matrix(paste0(rep(sources, P), "-",
                         rep(colnames(zeromat), each = L)),
                  byrow = F, nrow = L)
