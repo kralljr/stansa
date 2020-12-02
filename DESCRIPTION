@@ -1,0 +1,27 @@
+Package: stansa
+Title: Bayesian Source Apportionment Using RStan
+Description: Fits Bayesian source apportionment models (e.g., Nikolov et al. 2007, Hackstadt and Peng 2014) using Stan.
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Jenna",
+           family = "Krall",
+           role = c("aut", "cre"),
+           email = "jenna.krall@gmail.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+License: use_mit_license()
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Imports: 
+    dplyr,
+    rstan,
+    ggplot2,
+    magrittr,
+    tibble,
+    bayesplot,
+    RColorBrewer,
+    here,
+    purrr,
+    loggr,
+    stringr
