@@ -39,7 +39,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 
 
   # Plots
-  tr <- mytraceplot(stanres, dirname, filename, by = by1)
+  tr <- mytraceplot(stanres, dirname, filename, by1 = by)
   pa <- pairsplot(stanres, dirname, filename, mat1, sources)
   en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden)
   rh <- rhatplot(stanres, dirname, filename, pdf, ht = htrh)
