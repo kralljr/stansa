@@ -39,12 +39,12 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 
 
   # Plots
-  tr <- mytraceplot(stanres, dirname, filename, by1 = by)
+  tr <- mytraceplot(stanres, dirname, filename, by = by)
   pa <- pairsplot(stanres, dirname, filename, mat1, sources)
   en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden)
   rh <- rhatplot(stanres, dirname, filename, pdf, ht = htrh)
   bi <- biasplot(stanres, dirname, filename,
-        mat1, prof, meansd, typesim, by = by1, pdf, ht = htbi, wd = wdbi)
+        mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi)
 
 
   # output (save energy, rhat, bias)
