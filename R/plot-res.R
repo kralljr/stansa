@@ -98,25 +98,25 @@ mytraceplot <- function(stanres, dirname, filename, by = 5) {
 
   cols <- RColorBrewer::brewer.pal(4, "Dark2")
   pdf(fn1)
-  vars <- unique(res$var)
-  chains <- unique(res$chain)
-  iters1 <- unique(res$iters)
+  vars <- unique(res1$var)
+  chains <- unique(res1$chain)
+  iters1 <- unique(res1$iters)
   iters1 <- seq(ceiling(max(iters1) / 2), max(iters1), by = by)
-  res <- dplyr::filter(res, iters %in% iters1)
+  res1 <- dplyr::filter(res1, iters %in% iters1)
 
   par(mfrow = c(2, 2))
   for(i in 1 : length(vars)) {
-    res0 <- dplyr::filter(res, var == vars[i])
+    res0 <- dplyr::filter(res1, var == vars[i])
     min1 <- min(res0$value, na.rm = T)
     max1 <- max(res0$value, na.rm = T)
     for(j in 1 : length(chains)) {
-      res1 <- dplyr::filter(res0, chain == chains[j]) # %>% arrange(iters)
+      res2 <- dplyr::filter(res0, chain == chains[j]) # %>% arrange(iters)
       if(j == 1) {
-        plot(res1$iters, res1$value, col = cols[j], type = "l",
+        plot(res2$iters, res2$value, col = cols[j], type = "l",
              xlab = "Iteration", ylab = vars[i], main = vars[i],
              ylim = c(min1, max1))
       } else {
-        lines(res1$iters, res1$value, col = cols[j])
+        lines(res2$iters, res2$value, col = cols[j])
 
       }
     }
@@ -160,12 +160,12 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources) {
   for(j in 1 : 2) {
     k <- 1
     first5 <- paste0(rep(types[j], length(sources)), sources)
-    print(c("first5", first5))
+    #print(c("first5", first5))
     for(i in 1 : nF1) {
       l <- min(c((k + 7), nF))
-      print(c(k, l))
+      #print(c(k, l))
       lab1 <- c(first5, mat1[k : l])
-      print(lab1)
+      #print(lab1)
       pairs(stanres$fit, labels = lab1,
             pars = c(types[j], paste0("vF[", (k : l), "]")), condition = "energy")
 
@@ -229,12 +229,12 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
     dplyr::full_join(., params1)
 
 
-  # print highest correlations
-  dplyr::group_by(energy2, chain, var) %>%
+  #  highest correlations
+  cors <- dplyr::group_by(energy2, chain, var) %>%
     dplyr::summarize(., cor1 = cor(energy__, val)) %>%
     dplyr::mutate(., abscor = abs(cor1)) %>%
     dplyr::arrange(., desc(abscor)) %>%
-    dplyr::slice(1 : 5) %>% print()
+    dplyr::slice(1 : 5)
 
   # which to plot
   # samps <- sample(seq(1, nmax), 500, replace = F)
@@ -247,18 +247,18 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
   # could add lables for var here
 
   # plot
-  g1 <- ggplot2::ggplot(energy3, aes(x = val, y = energy__, colour = chain)) +
+  g1 <- ggplot2::ggplot(energy3, ggplot2::aes(x = val, y = energy__, colour = chain)) +
     ggplot2::geom_point() +
     ggplot2::facet_wrap(~var, scales = "free_x", ncol = 8)
 
   if(pdf) {
     filename1 <- paste0(filename, "-energy.pdf")
 
-    ggplot2::ggsave(here(file.path(dirname, filename1)),
+    ggplot2::ggsave(here::here(file.path(dirname, filename1)),
            g1, height = ht, width = wd, limitsize = F)
   }
 
-  g1
+  list(g1, cors)
 }
 
 
@@ -287,7 +287,7 @@ rhatplot <- function(stanres, dirname, filename, pdf = F, ht = 100) {
   if(pdf) {
     filename1 <- paste0(filename, "-rhat.pdf")
 
-    ggplot2::ggsave(here(file.path(dirname, filename1)),
+    ggplot2::ggsave(here::here(file.path(dirname, filename1)),
            g1, height = ht, limitsize = F)
   }
 
@@ -326,8 +326,8 @@ biasplot <- function(stanres, dirname, filename,
     dplyr::mutate(., chain = as.numeric(substr(var, 7, 7)), var = substring(var, 8)) %>%
     dplyr::filter(chain == 1, iters %in% sel) %>%
     dplyr::select(-c(iters, chain)) %>%
-    dplyr::separate(var, c("var1", "rowcol"), "\\[") %>%
-    dplyr::separate(rowcol, c("row", "col"), ",") %>%
+    tidyr::separate(var, c("var1", "rowcol"), "\\[") %>%
+    tidyr::separate(rowcol, c("row", "col"), ",") %>%
     dplyr::mutate(var1 = gsub("\\.", "", var1),
            col = gsub("\\]", "", col),
            row = gsub("\\]", "", row),
@@ -356,7 +356,7 @@ biasplot <- function(stanres, dirname, filename,
     dplyr::mutate(var1 = factor(var1, levels = c("mean", "sd"),
                          labels = c("mug", "sigmag"))) %>%
     dplyr::rename(name = source)
-  P <- unique(profdat$poll) %>% length()
+  P <- unique(prof$poll) %>% length()
   sigmaeps <- data.frame(row = seq(1, P), var1 = "sigmaeps", truth = truth$sigmaeps)
   truth <- dplyr::full_join(g, f) %>%
     dplyr::full_join(musigg) %>% dplyr::full_join(sigmaeps)
@@ -373,10 +373,10 @@ biasplot <- function(stanres, dirname, filename,
   # all but G
   dat1 <- dplyr::filter(dat, var1 != "G")
   g1 <- ggplot2::ggplot(data = dat1) +
-    ggplot2::geom_boxplot(aes(x = factor(row), y = val)) +
-    ggplot2::geom_point(aes(x = row, y = mean), colour = "red",
+    ggplot2::geom_boxplot(ggplot2::aes(x = factor(row), y = val)) +
+    ggplot2::geom_point(ggplot2::aes(x = row, y = mean), colour = "red",
                shape = 17) +
-    ggplot2::geom_point(aes(x = row, y = truth), colour = "blue",
+    ggplot2::geom_point(ggplot2::aes(x = row, y = truth), colour = "blue",
                shape = 8) +
     ggplot2::facet_wrap(~var1, scales = "free")
 
@@ -384,10 +384,10 @@ biasplot <- function(stanres, dirname, filename,
   # G
   dat1 <- dplyr::filter(dat, var1 == "G")
   g2 <- ggplot2::ggplot(data = dat1) +
-    ggplot2::geom_boxplot(aes(x = factor(row), y = val)) +
-    ggplot2::geom_point(aes(x = row, y = mean), colour = "red",
+    ggplot2::geom_boxplot(ggplot2::aes(x = factor(row), y = val)) +
+    ggplot2::geom_point(ggplot2::aes(x = row, y = mean), colour = "red",
                shape = 17) +
-    ggplot2::geom_point(aes(x = row, y = truth), colour = "blue",
+    ggplot2::geom_point(ggplot2::aes(x = row, y = truth), colour = "blue",
                shape = 8) +
     ggplot2::facet_wrap(~col, scales = "free")
 
@@ -395,12 +395,12 @@ biasplot <- function(stanres, dirname, filename,
   if(pdf) {
     filename1 <- paste0(filename, "-biasplot-noG.pdf")
 
-    ggplot2::ggsave(here(file.path(dirname, filename1)),
+    ggplot2::ggsave(here::here(file.path(dirname, filename1)),
            g1, height = ht, limitsize = F)
 
     filename1 <- paste0(filename, "-biasplot-G.pdf")
 
-    ggplot2::ggsave(here(file.path(dirname, filename1)),
+    ggplot2::ggsave(here::here(file.path(dirname, filename1)),
            g2, height = ht, limitsize = F)
   }
 
