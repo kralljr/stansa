@@ -101,6 +101,11 @@ simdat1 <- function(typesim = "ambient", N = 100, prof = prof,
 
   #y <- exp(log(g0 %*% f0) + (err))
   y <- g0 %*% f0 + err
+
+  # Standardize as in Nikolov
+  sd1 <- apply(y, 2, sd)
+  y <- sweep(y, 2, sd1, "/")
+
   colnames(y) <- colnames(f0)
   y1 <- data.frame(id = g1$id, y)
 
