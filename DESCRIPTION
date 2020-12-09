@@ -24,4 +24,5 @@ Imports:
     here,
     purrr,
     loggr,
-    stringr
+    stringr,
+    Matrix
