@@ -227,7 +227,7 @@ checkc2 <- function(dat) {
   # Rank of each submatrix equal to nsources - 1
   ranks <- vector()
   for(i in 1 : nrow(mat)) {
-    ranks[i] <- (as.numeric(rankMatrix(mat[-i, which(mat[i, ] == 0)])) == (nrow(mat) - 1)) * 1
+    ranks[i] <- (as.numeric(Matrix::rankMatrix(mat[-i, which(mat[i, ] == 0)])) == (nrow(mat) - 1)) * 1
   }
   # Return whether condition is met
   ifelse(nrow(mat) - sum(ranks) == 0, "condition met", "fail")
