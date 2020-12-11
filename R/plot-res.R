@@ -21,7 +21,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
                      filename = NULL, by = 5,
                      prof = prof, meansd = meansd, pdf = F,
                      # change heights for outputs
-                     hten = 200, wden = 20, htrh = 100, htbi = 10, wdbi = 10) {
+                     hten = 100, wden = 20, htrh = 100, htbi = 10, wdbi = 10) {
 
   # Get filename if not provisted
   if(is.null(filename)) {
@@ -238,7 +238,7 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
 
   # which to plot
   # samps <- sample(seq(1, nmax), 500, replace = F)
-  samps <- seq(nmax, start1, length = 100) %>%
+  samps <- seq(1, nmax, length = 1000) %>%
     round() %>% unique()
 
   # keep chain = 1
