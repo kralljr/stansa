@@ -155,7 +155,10 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources) {
 
   # All vf
   types <- c("mug", "sigmag")
-  nF <- names(stanres$fit)[grep("vF", names(stanres$fit))] %>% length()
+  # only vF exactly
+  #nF <- names(stanres$fit)[grep("vF", names(stanres$fit))] %>% length()
+  nF <- substr(names(stanres$fit), 1, 2)
+  nF <- length(which(nF == "vF"))
   nF1 <- ceiling(nF / 8)
   for(j in 1 : 2) {
     k <- 1
