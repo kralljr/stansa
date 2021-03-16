@@ -23,7 +23,7 @@
 runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
                     prof = prof, meansd = meansd, keepall = T,
                     rmout = F, sderr = 0.01, seeds = NULL, iter = 1000,
-                    chains = 1, findamb = NULL, notes = NULL, ...) {
+                    chains = 1, findamb = NULL, notes = NULL, fp = NULL, ...) {
 
   options(warn = 1)
   con <- file(here("logs/warnings.log"))
@@ -93,7 +93,7 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
   # save relevant metadata
   sources <- dat$true$g %>% colnames()
 
-  meta <- data.frame(starttime = starttime, endtime = endtime, notes = notes, typesim = typesim, stancode = stancode,
+  meta <- data.frame(starttime = starttime, endtime = endtime, fp = fp, notes = notes, typesim = typesim, stancode = stancode,
                      sderr = sderr, N = N, seeds = paste(seeds, collapse = ", "),
                      iter = iter,  chains = chains, call = cl, comments = "")
   coln <- ifelse(file.exists(here("logs/sim-model-log.csv")), F, T)
