@@ -19,6 +19,7 @@ runstan(
   chains = 1,
   findamb = NULL,
   notes = NULL,
+  fp = NULL,
   ...
 )
 }
