@@ -85,7 +85,7 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
     out <- list(dat = dat$true, standat = dat$stan, fit = fit)
   } else if(!is.null(stancode)) {
     out <- list(data = dat$true, standat = dat$stan,
-                summary = summary(fit)$summary, stantype = stantype)
+                summary = rstan::summary(fit)$summary, stantype = stantype)
   } else {
     out <- dat$true
   }
