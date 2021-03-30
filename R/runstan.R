@@ -66,8 +66,10 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
   # run stan model
   if(!is.null(stancode)) {
 
-    starttime1 <- stringr::str_replace_all(starttime, " ", "-") %>%
-      stringr::str_replace_all(., ":", "")
+    # starttime1 <- stringr::str_replace_all(starttime, " ", "-") %>%
+    #   stringr::str_replace_all(., ":", "")
+    starttime1 <- gsub(" ", "-", starttime) %>% gsub(":", "", .)
+    starttime1 <-
     loggr::log_file(
       here(paste0("logs/mainstan-", starttime1,".log"))
       , subscriptions=c('message', 'warning','stop'),
