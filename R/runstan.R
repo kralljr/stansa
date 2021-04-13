@@ -22,7 +22,7 @@
 #' @export
 runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
                     prof = prof, meansd = meansd, keepall = T,
-                    rmout = F, sderr = 0.01, seeds = NULL, iter = 1000,
+                    rmout = F, sderr = NULL, seeds = NULL, iter = 1000,
                     chains = 1, findamb = NULL, notes = NULL, fp = NULL, ...) {
 
   options(warn = 1)

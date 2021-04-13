@@ -14,7 +14,7 @@
 #' @export
 #'
 simdat <- function(stanmodel, typesim, N, prof = prof, meansd = meansd,
-  sderr = 0.01, rmout = F) {
+  sderr = NULL, rmout = F) {
 
   outl <- simdat1(typesim, N[1],  prof, meansd, sderr[1], rmout)
 
@@ -53,7 +53,7 @@ simdat <- function(stanmodel, typesim, N, prof = prof, meansd = meansd,
 #' @param rmout Whether to remove largest (outliers)
 #' @export
 simdat1 <- function(typesim = "ambient", N = 100, prof = prof,
-                    meansd = meansd, sderr = 0.01, rmout = F) {
+                    meansd = meansd, sderr = NULL, rmout = F) {
 
   ## Format
   # format G means
@@ -89,8 +89,6 @@ simdat1 <- function(typesim = "ambient", N = 100, prof = prof,
   cn <- colnames(g1)[-which(colnames(g1) == "id")] %>% sort()
   g1 <- g1[, c("id", cn)]
 
-  # Get error matrix
-  err <- matrix(rnorm(N * P, sd = sderr), ncol = P)
 
   # Get pollutant data
   g0 <- dplyr::select(g1, -id) %>% as.matrix()
@@ -99,8 +97,17 @@ simdat1 <- function(typesim = "ambient", N = 100, prof = prof,
   f0 <- dplyr::select(f1, -source) %>% as.matrix()
   rownames(f0) <- rn
 
+  mean <- g0 %*% f0
+
+  # Get error matrix
+  if(!is.null(sderr)) {
+    err <- matrix(rnorm(N * P, sd = sderr), ncol = P)
+  } else {
+    err <- matrix(rep(apply(mean, 2, sd) / 100, each = N), byrow = F, ncol = P)
+  }
+
   #y <- exp(log(g0 %*% f0) + (err))
-  y <- g0 %*% f0 + err
+  y <- mean + err
 
   # Standardize as in Nikolov
   # sd1 <- apply(y, 2, sd)
@@ -141,7 +148,7 @@ simdat1 <- function(typesim = "ambient", N = 100, prof = prof,
   # return stan data and truth
   out <- list(stan = list(N = N, L = L, P = P, B = B, LB = LB, posr = posr, posc = posc,
                           y = y, ones = ones, zeromat = zeromat, onemat = onemat),
-              true = list(y = y1, g = g1, f = f1, sigmaeps = sderr))
+              true = list(y = y1, g = g1, f = f1, sigmaeps = sderr, err = err))
 }
 
 
