@@ -52,17 +52,17 @@ simdat <- function(stanmodel, typesim, N, prof = prof, meansd = meansd,
 #' @param sderr Standard deviation of error.
 #' @param rmout Whether to remove largest (outliers)
 #' @export
-simdat1 <- function(typesim = "ambient", N = 100, prof = prof,
-                    meansd = meansd, sderr = NULL, rmout = F) {
+simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
+                    meansd0 = meansd, sderr = NULL, rmout = F) {
 
   ## Format
   # format G means
-  meansd <- dplyr::filter(meansd, type == typesim) %>%
+  meansd0 <- dplyr::filter(meansd0, type == typesim) %>%
     dplyr::select(., -type)
 
 
   # Format profiles: Keep 1 scale
-  prof1 <- dplyr::filter(prof, type == typesim) %>%
+  prof1 <- dplyr::filter(prof0, type == typesim) %>%
     dplyr::select(., poll, source, scale1, constraint)
   f1 <- dplyr::select(prof1, -constraint) %>%
     tidyr::pivot_wider(., names_from = "poll", values_from = "scale1")
@@ -84,7 +84,7 @@ simdat1 <- function(typesim = "ambient", N = 100, prof = prof,
   P <- ncol(f1) - 1
 
   # Get G
-  g1 <- geng(meansd, N, rmout)
+  g1 <- geng(meansd0, N, rmout)
   #alphabetize by source
   cn <- colnames(g1)[-which(colnames(g1) == "id")] %>% sort()
   g1 <- g1[, c("id", cn)]
@@ -103,15 +103,16 @@ simdat1 <- function(typesim = "ambient", N = 100, prof = prof,
   if(!is.null(sderr)) {
     err <- matrix(rnorm(N * P, sd = sderr), ncol = P)
   } else {
-    err <- matrix(rep(apply(mean, 2, sd) / 100, each = N), byrow = F, ncol = P)
+    sds1 <- apply(mean, 2, sd) / 10
+    err <- matrix(rnorm(N * P, sd = rep(sds1, N)), byrow = T, ncol = P)
   }
 
   #y <- exp(log(g0 %*% f0) + (err))
   y <- mean + err
 
-  # Standardize as in Nikolov
-  # sd1 <- apply(y, 2, sd)
-  # y <- sweep(y, 2, sd1, "/")
+  # Standardize as in Nikolov; Park et al. 2014
+  sd1 <- apply(y, 2, sd)
+  y <- sweep(y, 2, sd1, "/")
 
   colnames(y) <- colnames(f0)
   y1 <- data.frame(id = g1$id, y)
