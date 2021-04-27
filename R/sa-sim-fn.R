@@ -366,3 +366,15 @@ reorgout <- function(outa, outl) {
 
 }
 
+
+
+getsize <- function(N, L, P, nprobs) {
+  lg <- N * L
+  lf <- L * (P - L) * 2
+  lsigg <- L
+  lmug <- L
+  lsige <- P
+  rows <- lg + lf + lsigg + lmug + lsige + 1
+  cols <- 5 + nprobs
+  c(rows, cols)
+}
