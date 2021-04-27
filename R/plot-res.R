@@ -360,7 +360,10 @@ biasplot <- function(stanres, dirname, filename,
                          labels = c("mug", "sigmag"))) %>%
     dplyr::rename(name = source)
   P <- unique(prof$poll) %>% length()
-  sigmaeps <- data.frame(row = seq(1, P), var1 = "sigmaeps", truth = truth$sigmaeps)
+
+  se1 <- ifelse(!is.null(truth$sigmaeps), sigmaeps, colMeans(truth$err))
+
+  sigmaeps <- data.frame(row = seq(1, P), var1 = "sigmaeps", truth = se1)
   truth <- dplyr::full_join(g, f) %>%
     dplyr::full_join(musigg) %>% dplyr::full_join(sigmaeps)
 
