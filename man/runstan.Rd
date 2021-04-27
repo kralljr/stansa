@@ -11,7 +11,7 @@ runstan(
   stantype = NULL,
   prof = prof,
   meansd = meansd,
-  keepall = T,
+  keep = "all",
   rmout = F,
   sderr = NULL,
   seeds = NULL,
@@ -36,7 +36,7 @@ runstan(
 
 \item{meansd}{Matrix with columns corresponding to source, type, mean, sd, defaults to meansd.}
 
-\item{keepall}{Whether to output all posterior draws and simulated data.}
+\item{keep}{What to keep}
 
 \item{rmout}{Whether to remove largest (outliers)}
 

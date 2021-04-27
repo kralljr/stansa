@@ -12,7 +12,7 @@
 #' @param stantype Type of stan model (can differ from code: for ifelse statements)
 #' @param prof Profile data, defaults to prof.
 #' @param meansd Matrix with columns corresponding to source, type, mean, sd, defaults to meansd.
-#' @param keepall Whether to output all posterior draws and simulated data.
+#' @param keep What to keep
 #' @param rmout Whether to remove largest (outliers)
 #' @param sderr Standard deviation of error.  If not noninformative stan, can be vector of 2 for ambient local
 #' @param seed Seeds for stan data simulation and running (length 2).  If inform, seed must be length 3
@@ -21,7 +21,7 @@
 #' @param findamb Results from find ambient for informative
 #' @export
 runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
-                    prof = prof, meansd = meansd, keepall = T,
+                    prof = prof, meansd = meansd, keep = "all",
                     rmout = F, sderr = NULL, seeds = NULL, iter = 1000,
                     chains = 1, findamb = NULL, notes = NULL, fp = NULL, ...) {
 
@@ -81,11 +81,13 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
   }
 
   # get output
-  if(keepall) {
+  if(keep == "all") {
     out <- list(dat = dat$true, standat = dat$stan, fit = fit)
-  } else if(!is.null(stancode)) {
+  } else if(keep == "data") {
     out <- list(data = dat$true, standat = dat$stan,
                 summary = rstan::summary(fit)$summary, stantype = stantype)
+  } else if(keep == "summary") {
+    out <- rstan::summary(fit)$summary
   } else {
     out <- dat$true
   }
