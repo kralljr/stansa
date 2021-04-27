@@ -10,7 +10,7 @@ simdat(
   N,
   prof = prof,
   meansd = meansd,
-  sderr = 0.01,
+  sderr = NULL,
   rmout = F
 )
 }

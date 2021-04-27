@@ -7,9 +7,9 @@
 simdat1(
   typesim = "ambient",
   N = 100,
-  prof = prof,
-  meansd = meansd,
-  sderr = 0.01,
+  prof0 = prof,
+  meansd0 = meansd,
+  sderr = NULL,
   rmout = F
 )
 }
@@ -18,13 +18,13 @@ simdat1(
 
 \item{N}{Number of days to simulate.}
 
-\item{prof}{Profile data, defaults to prof.}
-
-\item{meansd}{Matrix with columns corresponding to source, type, mean, sd, defaults to meansd.}
-
 \item{sderr}{Standard deviation of error.}
 
 \item{rmout}{Whether to remove largest (outliers)}
+
+\item{prof}{Profile data, defaults to prof.}
+
+\item{meansd}{Matrix with columns corresponding to source, type, mean, sd, defaults to meansd.}
 }
 \description{
 \code{simdat1} Inner functions to simulate each data (e.g., ambient or local)

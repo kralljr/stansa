@@ -13,7 +13,7 @@ runstan(
   meansd = meansd,
   keepall = T,
   rmout = F,
-  sderr = 0.01,
+  sderr = NULL,
   seeds = NULL,
   iter = 1000,
   chains = 1,
