@@ -141,7 +141,9 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
   # Number of free elements
   # Position of free elements
   pos <- t(apply(zeromat, 1, function(x) which(x == 1)))
-
+  cons <- colnames(f1)[-1]
+  sources <- f1$source
+  namesf <- cbind(cons[posc], sources[posr])
   # Free elements
   B <- ncol(pos)
   LB <- B * L
@@ -149,7 +151,8 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
   # return stan data and truth
   out <- list(stan = list(N = N, L = L, P = P, B = B, LB = LB, posr = posr, posc = posc,
                           y = y, ones = ones, zeromat = zeromat, onemat = onemat),
-              true = list(y = y1, g = g1, f = f1, sigmaeps = sderr, err = err))
+              true = list(y = y1, g = g1, f = f1, sigmaeps = sderr, err = err, sources = sources,
+                          cons = cons, namesf = namesf))
 }
 
 
