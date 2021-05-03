@@ -38,7 +38,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
   meansd <- dplyr::filter(meansd, type == typesim)
 
 
-  # Plots
+  # # Plots
   tr <- mytraceplot(stanres, dirname, filename, by = by)
   pa <- pairsplot(stanres, dirname, filename, mat1, sources)
   en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden)
@@ -359,6 +359,7 @@ biasplot <- function(stanres, dirname, filename,
     dplyr::mutate(truth = truth / sd1) %>% dplyr::select(-c(source, sd1))
   f <- dplyr::filter(prof, type == typesim, is.na(constraint)) %>%
     dplyr::select(poll, source, scale1) %>%
+    dplyr::full_join(sddf) %>% dplyr::full_join(sdsource) %>%
     dplyr::rename(truth = scale1) %>%
     tidyr::unite(name, c(source, poll), sep = "-") %>%
     dplyr::mutate(row = factor(name, levels = mat1, labels = seq(1, length(mat1))),
