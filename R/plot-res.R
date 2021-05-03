@@ -432,3 +432,106 @@ biasplot <- function(stanres, dirname, filename,
   list(g1, g2)
 
 }
+
+
+
+#' \code{rescoverage} Calculate coverage of results
+#'
+#' @title rescoverage
+#' @param typesim Which simulation to run.  Currently, local1 - local4, ambient.
+#' @param stanres Output from runstan
+#' @param by Skips for traceplot, biasplot
+#' @param prof Profile data, defaults to prof.
+#' @param meansd Matrix with columns corresponding to source, type, mean, sd, defaults to meansd.
+#' @export
+rescoverage <- function(typesim, stanres, by = 5,
+                     prof = prof, meansd = meansd) {
+
+  sources <- stanres$dat$f$source
+  mat1 <- mat1fun(stanres, sources)
+
+
+  # Get simulation-specific mean/SD, profiles
+  prof <- dplyr::filter(prof, type == typesim)
+  meansd <- dplyr::filter(meansd, type == typesim)
+
+  # get scaling info
+  dat <- stanres$dat
+  mean1 <- as.matrix(dat$g[, -1]) %*% as.matrix(dat$f[, -1])
+  ynosd <- mean1 + dat$err
+  sdscale <- apply(ynosd, 2, sd)
+  sddf <- data.frame(sdscale, poll = colnames(dat$y[, -1]))
+  prof1 <- dplyr::filter(prof, constraint == 1) %>% dplyr::select(poll, source)
+  sdsource <-   dplyr::left_join(prof1, sddf) %>%
+    dplyr::select(source, sdscale) %>% na.omit() %>% dplyr::rename(sd1 = sdscale)
+
+
+  # Get data for boxplot of posterior
+  iters <- dim(stanres$fit)[1]
+  sel <- seq(1, iters, by = by)
+  params <- rstan::extract(stanres$fit, permuted = F) %>%
+    tibble::as_tibble() %>%
+    tibble::rowid_to_column(., "iters") %>%
+    tidyr::pivot_longer(., names_to = "var", values_to = "val", -iters) %>%
+    dplyr::mutate(., chain = as.numeric(substr(var, 7, 7)), var = substring(var, 8)) %>%
+    dplyr::filter(chain == 1, iters %in% sel) %>%
+    dplyr::select(-c(iters, chain)) %>%
+    tidyr::separate(var, c("var1", "rowcol"), "\\[") %>%
+    tidyr::separate(rowcol, c("row", "col"), ",") %>%
+    dplyr::mutate(var1 = gsub("\\.", "", var1),
+                  col = gsub("\\]", "", col),
+                  row = gsub("\\]", "", row),
+                  row = as.numeric(row),
+                  col = as.numeric(col)) %>%
+    dplyr::filter(!(var1 %in% c("nvF", "lp__")))
+
+
+  # truth
+  truth <- stanres$dat
+  g <- dplyr::rename(truth$g, row = id) %>%
+    tidyr::pivot_longer(-row, values_to = "truth")  %>%
+    dplyr::mutate(col = as.numeric(factor(name)), var1 = "G", source = name) %>%
+    dplyr::full_join(sdsource) %>%
+    dplyr::mutate(truth = truth / sd1) %>% dplyr::select(-c(source, sd1))
+  f <- dplyr::filter(prof, type == typesim, is.na(constraint)) %>%
+    dplyr::select(poll, source, scale1) %>%
+    dplyr::full_join(sddf) %>% dplyr::full_join(sdsource) %>%
+    dplyr::rename(truth = scale1) %>%
+    tidyr::unite(name, c(source, poll), sep = "-") %>%
+    dplyr::mutate(row = factor(name, levels = mat1, labels = seq(1, length(mat1))),
+                  row = as.numeric(row),
+                  var1 = "vF",   truth = truth / sdscale * sd1) %>%
+    dplyr::select(-sdscale)
+  musigg <- dplyr::filter(meansd, type == typesim) %>%
+    dplyr::select(-type) %>%
+    dplyr::mutate(row = as.numeric(factor(source))) %>%
+    tidyr::pivot_longer(-c(source, row),
+                        names_to = "var1", values_to = "truth") %>%
+    dplyr::mutate(var1 = factor(var1, levels = c("mean", "sd"),
+                                labels = c("mug", "sigmag"))) %>%
+    dplyr::full_join(sdsource) %>%
+    dplyr::mutate(truth = truth / sd1) %>% dplyr::select(-sd1) %>%
+    dplyr::rename(name = source)
+  P <- unique(prof$poll) %>% length()
+
+  se1 <- apply(mean1, 2, sd) / 10
+  se1 <- se1 / sdscale
+
+
+  sigmaeps <- data.frame(row = seq(1, P), var1 = "sigmaeps", truth = se1)
+  truth <- dplyr::full_join(g, f) %>%
+    dplyr::full_join(musigg) %>% dplyr::full_join(sigmaeps)
+
+  # Find posterior mean
+  means <- dplyr::group_by(params) %>%
+    dplyr::group_by(var1, row, col) %>%
+    dplyr::summarize(lb = quantile(val, probs = 0.025),
+                     ub = quantile(val, probs = 0.975), postmean = mean(val))
+
+  # combine
+  dat <- dplyr::full_join(means, truth) %>%
+    dplyr::select(-sd1) %>%
+    dplyr::mutate(coverage = ifelse(truth >= lb & truth <= ub, 1, 0))
+  dat
+
+}
