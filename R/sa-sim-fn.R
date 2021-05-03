@@ -152,7 +152,7 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
   out <- list(stan = list(N = N, L = L, P = P, B = B, LB = LB, posr = posr, posc = posc,
                           y = y, ones = ones, zeromat = zeromat, onemat = onemat),
               true = list(y = y1, g = g1, f = f1, sigmaeps = sderr, err = err, sources = sources,
-                          cons = cons, namesf = namesf))
+                          cons = cons, namesf = namesf, sd1 = sd1))
 }
 
 
