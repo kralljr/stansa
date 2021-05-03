@@ -319,6 +319,17 @@ biasplot <- function(stanres, dirname, filename,
   by = 5,
   pdf = F, ht = 10, wd = 10) {
 
+  # get scaling info
+  dat <- stanres$dat
+  mean1 <- as.matrix(dat$g[, -1]) %*% as.matrix(dat$f[, -1])
+  ynosd <- mean1 + dat$err
+  sdscale <- apply(ynosd, 2, sd)
+  sddf <- data.frame(sdscale, poll = colnames(dat$y[, -1]))
+  prof1 <- dplyr::filter(prof, constraint == 1) %>% dplyr::select(poll, source)
+  sdsource <-   dplyr::left_join(prof1, sddf) %>%
+    dplyr::select(source, sdscale) %>% na.omit() %>% dplyr::rename(sd1 = sdscale)
+
+
   # Get data for boxplot of posterior
   iters <- dim(stanres$fit)[1]
   sel <- seq(1, iters, by = by)
@@ -343,14 +354,17 @@ biasplot <- function(stanres, dirname, filename,
   truth <- stanres$dat
   g <- dplyr::rename(truth$g, row = id) %>%
     tidyr::pivot_longer(-row, values_to = "truth")  %>%
-    dplyr::mutate(col = as.numeric(factor(name)), var1 = "G")
+    dplyr::mutate(col = as.numeric(factor(name)), var1 = "G", source = name) %>%
+    dplyr::full_join(sdsource) %>%
+    dplyr::mutate(truth = truth / sd1) %>% dplyr::select(-c(source, sd1))
   f <- dplyr::filter(prof, type == typesim, is.na(constraint)) %>%
     dplyr::select(poll, source, scale1) %>%
     dplyr::rename(truth = scale1) %>%
     tidyr::unite(name, c(source, poll), sep = "-") %>%
     dplyr::mutate(row = factor(name, levels = mat1, labels = seq(1, length(mat1))),
            row = as.numeric(row),
-           var1 = "vF")
+           var1 = "vF",   truth = truth / sdscale * sd1) %>%
+    dplyr::select(-sdscale)
   musigg <- dplyr::filter(meansd, type == typesim) %>%
     dplyr::select(-type) %>%
     dplyr::mutate(row = as.numeric(factor(source))) %>%
@@ -358,10 +372,14 @@ biasplot <- function(stanres, dirname, filename,
                  names_to = "var1", values_to = "truth") %>%
     dplyr::mutate(var1 = factor(var1, levels = c("mean", "sd"),
                          labels = c("mug", "sigmag"))) %>%
+    dplyr::full_join(sdsource) %>%
+    dplyr::mutate(truth = truth / sd1) %>% dplyr::select(-sd1) %>%
     dplyr::rename(name = source)
   P <- unique(prof$poll) %>% length()
 
-  se1 <- ifelse(!is.null(truth$sigmaeps), sigmaeps, colMeans(truth$err))
+  se1 <- apply(mean1, 2, sd) / 10
+  se1 <- se1 / sdscale
+
 
   sigmaeps <- data.frame(row = seq(1, P), var1 = "sigmaeps", truth = se1)
   truth <- dplyr::full_join(g, f) %>%
