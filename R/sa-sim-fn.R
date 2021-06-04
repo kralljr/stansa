@@ -104,6 +104,7 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
     err <- matrix(rnorm(N * P, sd = sderr), ncol = P)
   } else {
     sds1 <- apply(mean, 2, sd) / 10
+    sderr <- sds1
     err <- matrix(rnorm(N * P, sd = rep(sds1, N)), byrow = T, ncol = P)
   }
 
@@ -153,6 +154,21 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
                           y = y, ones = ones, zeromat = zeromat, onemat = onemat),
               true = list(y = y1, g = g1, f = f1, sigmaeps = sderr, err = err, sources = sources,
                           cons = cons, namesf = namesf, sd1 = sd1))
+}
+
+
+
+#' \code{genln} Generate lognormal data from dataset
+#'
+#' @title genln
+#'
+#' @param dat Matrix with columns corresponding to mean, sd
+#' @param N Number of days to simulate
+#' @export
+genln <- function(dat, N) {
+  sigma <- sqrt(log(dat$sd^2/ dat$mean^2 + 1))
+  mu <- log(dat$mean) - sigma^2 / 2
+  data.frame(id = seq(1, N), conc = rlnorm(N, mu, sigma))
 }
 
 
