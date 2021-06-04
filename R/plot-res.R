@@ -21,7 +21,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
                      filename = NULL, by = 5,
                      prof = prof, meansd = meansd, pdf = F,
                      # change heights for outputs
-                     hten = 100, wden = 20, htrh = 100, htbi = 10, wdbi = 10) {
+                     hten = 150, wden = 20, htrh = 100, htbi = 10, wdbi = 10) {
 
   # Get filename if not provisted
   if(is.null(filename)) {
@@ -197,7 +197,7 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources) {
 #' @param wd Width of pdf
 #' @export
 energyplot <- function(stanres, dirname, filename, pdf = F,
-                       ht = 400, wd = 20) {
+                       ht = 150, wd = 20) {
 
   # Which items to save
   start1 <- dim(stanres$fit)[1]
