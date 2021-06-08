@@ -31,6 +31,8 @@ plotstan <- function(typesim, stanres, dirname = NULL,
   # Get necessary input
   sources <- stanres$dat$f$source
   mat1 <- mat1fun(stanres, sources)
+  cons <- stanres$dat$cons
+  labels <- makelabels(cons, sources, mat1)
 
 
   # Get simulation-specific mean/SD, profiles
@@ -39,17 +41,18 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 
 
   # # Plots
-  tr <- mytraceplot(stanres, dirname, filename, by = by)
-  pa <- pairsplot(stanres, dirname, filename, mat1, sources)
-  en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden)
+  tr <- mytraceplot(stanres, dirname, filename, by = by, labels = labels)
+  pa <- pairsplot(stanres, dirname, filename, mat1, sources, cons)
+  en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden, labels = labels)
   rh <- rhatplot(stanres, dirname, filename, pdf, ht = htrh)
   bi <- biasplot(stanres, dirname, filename,
-        mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi)
+        mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi,
+        labels = labels)
 
 
   # output (save energy, rhat, bias)
   list(free = mat1, sources = sources,
-       en = en, rh = rh, bi = bi)
+       en = en, rh = rh, bi = bi, labels = labels)
 }
 
 
@@ -77,6 +80,100 @@ mat1fun <- function(stanres, sources) {
 }
 
 
+#' \code{varn} Extract name (vs. position)
+#'
+#' @title varn
+#'
+#' @param var Variable from stan output
+varn <- function(var) {
+  var <- gsub("\\.", "", var)
+  wh <- stringr::str_locate(var, "\\[")[, 1]
+  wh <- wh - 1
+  wh[is.na(wh)] <- 1
+  var <- stringr::str_sub(var, 1, wh)
+  var
+}
+
+
+#' \code{rown} Extract row
+#'
+#' @title rown
+#'
+#' @param var Variable from stan output
+rown <- function(var) {
+  str_extract(var, "\\[\\d*\\]") %>%
+    str_sub(., 2, nchar(.)-1) %>%
+    as.numeric()
+}
+
+
+#' \code{rown} Extract row
+#'
+#' @title rown
+#'
+#' @param var Variable from stan output
+rownG <- function(var) {
+  str_extract(var, "\\[\\d*\\,") %>%
+    str_sub(., 2, nchar(.)-1) %>%
+    as.numeric()
+}
+
+
+#' \code{coln} Extract column
+#'
+#' @title coln
+#'
+#' @param var Variable from stan output
+coln <- function(var) {
+  str_extract(var, "\\,\\d*\\]") %>%
+    str_sub(., 2, nchar(.)-1) %>%
+    as.numeric()
+}
+
+#' \code{makelabels} Create names for variables
+#'
+#' @title makelabels
+#'
+#' @param cons Names of pollutants in order
+#' @param sources Names of sources in order
+#' @param mat1 Names of free elements in F in order
+#' @export
+makelabels <- function(cons, sources, mat1) {
+   sourcesd <- as_tibble(sources) %>% rowid_to_column() %>%
+     rename(source = value)
+   consd <- as_tibble(cons) %>% rowid_to_column()%>%
+     rename(cons = value)
+   mat1d <- as_tibble(mat1) %>% rowid_to_column()%>%
+     rename(mat1 = value)
+   labels <- full_join(sourcesd, consd) %>% full_join(., mat1d)
+
+  labels
+
+}
+
+#' \code{getnames} Label function
+#'
+#' @title getnames
+#'
+#' @param var Variable name from stan
+getnames <- function(var, labels = labels) {
+
+  varname <- varn(var)
+  var1 <- data.frame(var = var, varname = varname)
+  var1 <- mutate(var1, varid = ifelse(varname == "G", coln(var), rown(var)),
+                 varid2 = ifelse(varname == "G", rownG(var), rown(var)))
+
+  sources <- labels$source[var1$varid]
+  mat1 <- labels$mat1[var1$varid]
+  cons <- labels$cons[var1$varid]
+
+  var1 <- mutate(var1, sources = sources, mat1 = mat1, cons = cons,
+                 out = case_when(varname %in% c("sigmag", "mug", "G") ~ sources,
+                                 varname %in% c("nvF", "vF") ~ mat1,
+                                 varname %in% "sigmaeps" ~ cons), varname1 = paste0(varname, varid2, "-", out))
+
+  var1$varname1
+}
 
 
 
@@ -89,10 +186,13 @@ mat1fun <- function(stanres, sources) {
 #' @param filename Base filename
 #' @param by Skips for traceplot
 #' @export
-mytraceplot <- function(stanres, dirname, filename, by = 5) {
+mytraceplot <- function(stanres, dirname, filename, by = 5, labels = labels) {
   start1 <- dim(stanres$fit)[1]
   res1 <- unlstan(stanres$fit, by1 = by, start = start1)
-
+#chain iters var    value
+  # <fct> <int> <chr>  <dbl>
+  #   1 1     50000 G[1,1] 0.610
+  # 2 1     50000 G[2,1] 1.28
   fn1 <-  here::here(file.path(dirname,
                          paste0(filename, "-traceplot.pdf")))
 
@@ -109,11 +209,12 @@ mytraceplot <- function(stanres, dirname, filename, by = 5) {
     res0 <- dplyr::filter(res1, var == vars[i])
     min1 <- min(res0$value, na.rm = T)
     max1 <- max(res0$value, na.rm = T)
+    lab <- getnames(vars[i], labels)
     for(j in 1 : length(chains)) {
       res2 <- dplyr::filter(res0, chain == chains[j]) # %>% arrange(iters)
       if(j == 1) {
         plot(res2$iters, res2$value, col = cols[j], type = "l",
-             xlab = "Iteration", ylab = vars[i], main = vars[i],
+             xlab = "Iteration", ylab = lab, main = lab,
              ylim = c(min1, max1))
       } else {
         lines(res2$iters, res2$value, col = cols[j])
@@ -144,7 +245,7 @@ mytraceplot <- function(stanres, dirname, filename, by = 5) {
 #' @param mat1 Names of free elements of F
 #' @param sources Names of sources
 #' @export
-pairsplot <- function(stanres, dirname, filename, mat1, sources) {
+pairsplot <- function(stanres, dirname, filename, mat1, sources, cons) {
 
   filename1 <- paste0(filename, "-pairs.pdf")
   pdf(here::here(dirname, filename1))
@@ -159,22 +260,28 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources) {
   #nF <- names(stanres$fit)[grep("vF", names(stanres$fit))] %>% length()
   nF <- substr(names(stanres$fit), 1, 2)
   nF <- length(which(nF == "vF"))
-  nF1 <- ceiling(nF / 8)
+  nF1 <- ceiling(nF / 6)
   for(j in 1 : 2) {
     k <- 1
     first5 <- paste0(rep(types[j], length(sources)), sources)
     #print(c("first5", first5))
+
+    # number of pages/plots
     for(i in 1 : nF1) {
-      l <- min(c((k + 7), nF))
+      l <- min(c((k + 5), nF))
       #print(c(k, l))
       lab1 <- c(first5, mat1[k : l])
       #print(lab1)
       pairs(stanres$fit, labels = lab1,
             pars = c(types[j], paste0("vF[", (k : l), "]")), condition = "energy")
 
-      k <- k + 8
+      k <- k + 6
     }
   }
+
+  lab1 <- paste0("sigmaeps-", cons)
+  pairs(stanres$fit, labels = lab1,
+        pars = c("sigmaeps"), condition = "energy")
 
   dev.off()
 
@@ -195,9 +302,10 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources) {
 #' @param pdf Whether to save pdf, defaults to F
 #' @param ht Height of pdf
 #' @param wd Width of pdf
+#' @param labels label dataset
 #' @export
 energyplot <- function(stanres, dirname, filename, pdf = F,
-                       ht = 150, wd = 20) {
+                       ht = 150, wd = 20, labels = labels) {
 
   # Which items to save
   start1 <- dim(stanres$fit)[1]
@@ -228,12 +336,14 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
     dplyr::mutate(., chain = as.numeric(substr(var, 7, 7)), var = substring(var, 8))
 
   # Remove some iterations
+  browser()
   energy2 <- dplyr::mutate(energy1, iters = iters - min(iters)) %>%
-    dplyr::full_join(., params1)
+    dplyr::full_join(., params1) %>%
+    dplyr::mutate(varname = getnames(var, labels))
 
 
   #  highest correlations
-  cors <- dplyr::group_by(energy2, chain, var) %>%
+  cors <- dplyr::group_by(energy2, chain, var, varname) %>%
     dplyr::summarize(., cor1 = cor(energy__, val)) %>%
     dplyr::mutate(., abscor = abs(cor1)) %>%
     dplyr::arrange(., desc(abscor)) %>%
@@ -252,7 +362,7 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
   # plot
   g1 <- ggplot2::ggplot(energy3, ggplot2::aes(x = val, y = energy__, colour = chain)) +
     ggplot2::geom_point() +
-    ggplot2::facet_wrap(~var, scales = "free_x", ncol = 8)
+    ggplot2::facet_wrap(~varname, scales = "free_x", ncol = 8)
 
   if(pdf) {
     filename1 <- paste0(filename, "-energy.pdf")
@@ -312,12 +422,13 @@ rhatplot <- function(stanres, dirname, filename, pdf = F, ht = 100) {
 #' @param pdf Whether to save pdf, defaults to F
 #' @param ht Height of pdf
 #' @param wd Width of pdf
+#' @param labels labels from makelabels
 #' @export
 biasplot <- function(stanres, dirname, filename,
                      mat1,
   prof = prof, meansd = meansd, typesim = typesim,
   by = 5,
-  pdf = F, ht = 10, wd = 10) {
+  pdf = F, ht = 10, wd = 10, labels = labels) {
 
   # get scaling info
   dat <- stanres$dat
@@ -393,15 +504,28 @@ biasplot <- function(stanres, dirname, filename,
 
   # combine
   dat <- dplyr::full_join(params, truth) %>%
-    dplyr::full_join(means)
+    dplyr::full_join(means) %>%
+    mutate(varid = ifelse(var1 == "G", col, row),
+           varid2 = row)
+
+  sources <- labels$source[dat$varid]
+  mat1 <- labels$mat1[dat$varid]
+  cons <- labels$cons[dat$varid]
+
+  dat <- mutate(dat, sources = sources, mat1 = mat1, cons = cons,
+                 out = case_when(var1 %in% c("sigmag", "mug", "G") ~ sources,
+                                 var1 %in% c("nvF", "vF") ~ mat1,
+                                 var1 %in% "sigmaeps" ~ cons),
+                varname1 = paste0(var1, varid2, "-", out))
+
 
   # all but G
   dat1 <- dplyr::filter(dat, var1 != "G")
   g1 <- ggplot2::ggplot(data = dat1) +
-    ggplot2::geom_boxplot(ggplot2::aes(x = factor(row), y = val)) +
-    ggplot2::geom_point(ggplot2::aes(x = row, y = mean), colour = "red",
+    ggplot2::geom_boxplot(ggplot2::aes(x = varname1, y = val)) +
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = mean), colour = "red",
                shape = 17) +
-    ggplot2::geom_point(ggplot2::aes(x = row, y = truth), colour = "blue",
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = truth), colour = "blue",
                shape = 8) +
     ggplot2::facet_wrap(~var1, scales = "free")
 
@@ -409,10 +533,10 @@ biasplot <- function(stanres, dirname, filename,
   # G
   dat1 <- dplyr::filter(dat, var1 == "G")
   g2 <- ggplot2::ggplot(data = dat1) +
-    ggplot2::geom_boxplot(ggplot2::aes(x = factor(row), y = val)) +
-    ggplot2::geom_point(ggplot2::aes(x = row, y = mean), colour = "red",
+    ggplot2::geom_boxplot(ggplot2::aes(x = varname1, y = val)) +
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = mean), colour = "red",
                shape = 17) +
-    ggplot2::geom_point(ggplot2::aes(x = row, y = truth), colour = "blue",
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = truth), colour = "blue",
                shape = 8) +
     ggplot2::facet_wrap(~col, scales = "free")
 
