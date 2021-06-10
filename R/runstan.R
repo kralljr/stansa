@@ -23,7 +23,7 @@
 runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
                     prof = prof, meansd = meansd, keep = "all",
                     rmout = F, sderr = NULL, seeds = NULL, iter = 1000,
-                    chains = 1, findamb = NULL, notes = NULL, fp = NULL, ...) {
+                    chains = 1, findamb = NULL, notes = NULL, fp = NULL, names = F,...) {
 
   options(warn = 1)
   con <- file(here("logs/warnings.log"))
@@ -78,16 +78,30 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
     fit <- rstan::stan(file= stancode, data= dat$stan,
                 seed = seeds[2], iter = iter, chains = chains,
                 ...)
+
+    sum1 <- rstan::summary(fit)$summary
+
+    if(names) {
+    sum1 <- data.frame(sum1)
+    sources <- stanres$dat$f$source
+    mat1 <- mat1fun(stanres, sources)
+    cons <- stanres$dat$cons
+    labels <- makelabels(cons, sources, mat1)
+    sum1 <- rownames_to_column(sum1, var = "var") %>%
+      mutate(var = getnames(var, labels))
+    }
   }
+
+
 
   # get output
   if(keep == "all") {
-    out <- list(dat = dat$true, standat = dat$stan, fit = fit)
+    out <- list(dat = dat$true, standat = dat$stan, fit = fit, summary = sum1)
   } else if(keep == "data") {
     out <- list(data = dat$true, standat = dat$stan,
-                summary = rstan::summary(fit)$summary, stantype = stantype)
+                summary = sum1, stantype = stantype)
   } else if(keep == "summary") {
-    out <- rstan::summary(fit)$summary
+    out <- sum1
   } else {
     out <- dat$true
   }
