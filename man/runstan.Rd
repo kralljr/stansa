@@ -20,6 +20,7 @@ runstan(
   findamb = NULL,
   notes = NULL,
   fp = NULL,
+  names = F,
   ...
 )
 }

@@ -15,7 +15,8 @@ biasplot(
   by = 5,
   pdf = F,
   ht = 10,
-  wd = 10
+  wd = 10,
+  labels = labels
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ biasplot(
 \item{ht}{Height of pdf}
 
 \item{wd}{Width of pdf}
+
+\item{labels}{labels from makelabels}
 }
 \description{
 \code{biasplot} Create energy plots for stan output

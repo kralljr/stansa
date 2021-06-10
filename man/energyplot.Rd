@@ -4,7 +4,15 @@
 \alias{energyplot}
 \title{energyplot}
 \usage{
-energyplot(stanres, dirname, filename, pdf = F, ht = 400, wd = 20)
+energyplot(
+  stanres,
+  dirname,
+  filename,
+  pdf = F,
+  ht = 150,
+  wd = 20,
+  labels = labels
+)
 }
 \arguments{
 \item{stanres}{Output from runstan}
@@ -18,6 +26,8 @@ energyplot(stanres, dirname, filename, pdf = F, ht = 400, wd = 20)
 \item{ht}{Height of pdf}
 
 \item{wd}{Width of pdf}
+
+\item{labels}{label dataset}
 }
 \description{
 \code{energyplot} Create energy plots for stan output

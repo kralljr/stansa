@@ -13,7 +13,7 @@ plotstan(
   prof = prof,
   meansd = meansd,
   pdf = F,
-  hten = 100,
+  hten = 150,
   wden = 20,
   htrh = 100,
   htbi = 10,
