@@ -308,7 +308,7 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
                        ht = 150, wd = 20, labels = labels) {
 
   # Which items to save
-  start1 <- dim(stanres$fit)[1]
+  start1 <- dim(stanres$fit)[1] *2
   nmax <- start1 - start1 / 2
   cn <- dim(stanres$fit)[2]
   energy <- rstan::get_sampler_params(stanres$fit)
@@ -336,14 +336,14 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
     dplyr::mutate(., chain = as.numeric(substr(var, 7, 7)), var = substring(var, 8))
 
   # Remove some iterations
-  browser()
   energy2 <- dplyr::mutate(energy1, iters = iters - min(iters)) %>%
-    dplyr::full_join(., params1) %>%
-    dplyr::mutate(varname = getnames(var, labels))
+    dplyr::full_join(., params1)
+  # %>%
+  #   dplyr::mutate(varname = getnames(var, labels))
 
 
   #  highest correlations
-  cors <- dplyr::group_by(energy2, chain, var, varname) %>%
+  cors <- dplyr::group_by(energy2, chain, var) %>%
     dplyr::summarize(., cor1 = cor(energy__, val)) %>%
     dplyr::mutate(., abscor = abs(cor1)) %>%
     dplyr::arrange(., desc(abscor)) %>%
@@ -362,7 +362,7 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
   # plot
   g1 <- ggplot2::ggplot(energy3, ggplot2::aes(x = val, y = energy__, colour = chain)) +
     ggplot2::geom_point() +
-    ggplot2::facet_wrap(~varname, scales = "free_x", ncol = 8)
+    ggplot2::facet_wrap(~var, scales = "free_x", ncol = 8)
 
   if(pdf) {
     filename1 <- paste0(filename, "-energy.pdf")
