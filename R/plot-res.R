@@ -62,15 +62,19 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 #'
 #' @title mat1fun
 #'
-#' @param stanres Output from runstan
+#' @param standat Stan data
 #' @param sources Names of sources
 #' @export
-mat1fun <- function(stanres, sources) {
+mat1fun <- function(standat, sources) {
   # get constraint names for nVF
-  P <- stanres$standat$P
-  L <- stanres$standat$L
 
-  zeromat <- stanres$standat$zeromat
+  if("standat" %in% names(standat)) {
+    standat <- standat$standat
+  }
+  P <- standat$P
+  L <- standat$L
+
+  zeromat <- standat$zeromat
   mat1 <- matrix(paste0(rep(sources, P), "-",
                         rep(colnames(zeromat), each = L)),
                  byrow = F, nrow = L)
@@ -101,8 +105,8 @@ varn <- function(var) {
 #'
 #' @param var Variable from stan output
 rown <- function(var) {
-  str_extract(var, "\\[\\d*\\]") %>%
-    str_sub(., 2, nchar(.)-1) %>%
+  stringr::str_extract(var, "\\[\\d*\\]") %>%
+    stringr::str_sub(., 2, nchar(.)-1) %>%
     as.numeric()
 }
 
@@ -113,8 +117,8 @@ rown <- function(var) {
 #'
 #' @param var Variable from stan output
 rownG <- function(var) {
-  str_extract(var, "\\[\\d*\\,") %>%
-    str_sub(., 2, nchar(.)-1) %>%
+  stringr::str_extract(var, "\\[\\d*\\,") %>%
+    stringr::str_sub(., 2, nchar(.)-1) %>%
     as.numeric()
 }
 
@@ -125,8 +129,8 @@ rownG <- function(var) {
 #'
 #' @param var Variable from stan output
 coln <- function(var) {
-  str_extract(var, "\\,\\d*\\]") %>%
-    str_sub(., 2, nchar(.)-1) %>%
+  stringr::str_extract(var, "\\,\\d*\\]") %>%
+    stringr::str_sub(., 2, nchar(.)-1) %>%
     as.numeric()
 }
 
@@ -139,13 +143,13 @@ coln <- function(var) {
 #' @param mat1 Names of free elements in F in order
 #' @export
 makelabels <- function(cons, sources, mat1) {
-   sourcesd <- as_tibble(sources) %>% rowid_to_column() %>%
-     rename(source = value)
-   consd <- as_tibble(cons) %>% rowid_to_column()%>%
-     rename(cons = value)
-   mat1d <- as_tibble(mat1) %>% rowid_to_column()%>%
-     rename(mat1 = value)
-   labels <- full_join(sourcesd, consd) %>% full_join(., mat1d)
+   sourcesd <- tibble::as_tibble(sources) %>% tibble::rowid_to_column() %>%
+     dplyr::rename(source = value)
+   consd <- tibble::as_tibble(cons) %>% tibble::rowid_to_column()%>%
+     dplyr::rename(cons = value)
+   mat1d <- tibble::as_tibble(mat1) %>% tibble::rowid_to_column()%>%
+     dplyr::rename(mat1 = value)
+   labels <- dplyr::full_join(sourcesd, consd) %>% dplyr::full_join(., mat1d)
 
   labels
 
@@ -160,15 +164,15 @@ getnames <- function(var, labels = labels) {
 
   varname <- varn(var)
   var1 <- data.frame(var = var, varname = varname)
-  var1 <- mutate(var1, varid = ifelse(varname == "G", coln(var), rown(var)),
+  var1 <- dplyr::mutate(var1, varid = ifelse(varname == "G", coln(var), rown(var)),
                  varid2 = ifelse(varname == "G", rownG(var), rown(var)))
 
   sources <- labels$source[var1$varid]
   mat1 <- labels$mat1[var1$varid]
   cons <- labels$cons[var1$varid]
 
-  var1 <- mutate(var1, sources = sources, mat1 = mat1, cons = cons,
-                 out = case_when(varname %in% c("sigmag", "mug", "G") ~ sources,
+  var1 <- dplyr::mutate(var1, sources = sources, mat1 = mat1, cons = cons,
+                 out = dplyr::case_when(varname %in% c("sigmag", "mug", "G") ~ sources,
                                  varname %in% c("nvF", "vF") ~ mat1,
                                  varname %in% "sigmaeps" ~ cons), varname1 = paste0(varname, varid2, "-", out))
 
