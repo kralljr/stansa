@@ -83,12 +83,12 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
 
     if(names) {
     sum1 <- data.frame(sum1)
-    sources <- stanres$dat$f$source
-    mat1 <- mat1fun(stanres, sources)
-    cons <- stanres$dat$cons
+    sources <- dat$true$f$source
+    mat1 <- mat1fun(dat$stan, sources)
+    cons <- dat$true$cons
     labels <- makelabels(cons, sources, mat1)
-    sum1 <- rownames_to_column(sum1, var = "var") %>%
-      mutate(var = getnames(var, labels))
+    sum1 <- tibble::rownames_to_column(sum1, var = "var") %>%
+      dplyr::mutate(var = getnames(var, labels))
     }
   }
 
