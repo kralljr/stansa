@@ -509,7 +509,7 @@ biasplot <- function(stanres, dirname, filename,
   # combine
   dat <- dplyr::full_join(params, truth) %>%
     dplyr::full_join(means) %>%
-    mutate(varid = ifelse(var1 == "G", col, row),
+    dplyr::mutate(varid = ifelse(var1 == "G", col, row),
            varid2 = row)
 
   sources <- labels$source[dat$varid]
