@@ -4,10 +4,10 @@
 \alias{mat1fun}
 \title{mat1fun}
 \usage{
-mat1fun(stanres, sources)
+mat1fun(standat, sources)
 }
 \arguments{
-\item{stanres}{Output from runstan}
+\item{standat}{Stan data}
 
 \item{sources}{Names of sources}
 }
