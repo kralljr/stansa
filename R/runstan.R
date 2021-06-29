@@ -71,7 +71,7 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
     starttime1 <- gsub(" ", "-", starttime) %>% gsub(":", "", .)
     starttime1 <-
     loggr::log_file(
-      here(paste0("logs/mainstan-", starttime1,".log"))
+      here(paste0("logs/mainstan-", typesim, "-", stantype, "-", starttime1,".log"))
       , subscriptions=c('message', 'warning','stop'),
       log_muffled = T
     )
