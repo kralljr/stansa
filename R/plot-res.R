@@ -517,7 +517,7 @@ biasplot <- function(stanres, dirname, filename,
   cons <- labels$cons[dat$varid]
 
   dat <- dplyr::mutate(dat, sources = sources, mat1 = mat1, cons = cons,
-                 out = case_when(var1 %in% c("sigmag", "mug", "G") ~ sources,
+                 out = dplyr::case_when(var1 %in% c("sigmag", "mug", "G") ~ sources,
                                  var1 %in% c("nvF", "vF") ~ mat1,
                                  var1 %in% "sigmaeps" ~ cons),
                 varname1 = paste0(var1, varid2, "-", out))
