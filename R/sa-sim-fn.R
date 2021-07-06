@@ -53,7 +53,7 @@ simdat <- function(stanmodel, typesim, N, prof = prof, meansd = meansd,
 #' @param rmout Whether to remove largest (outliers)
 #' @export
 simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
-                    meansd0 = meansd, sderr = NULL, rmout = F) {
+                    meansd0 = meansd, sderr = NULL, rmout = F, log1 = T) {
 
   ## Format
   # format G means
@@ -84,7 +84,7 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
   P <- ncol(f1) - 1
 
   # Get G
-  g1 <- geng(meansd0, N, rmout)
+  g1 <- geng(meansd0, N, rmout, log = log1)
   #alphabetize by source
   cn <- colnames(g1)[-which(colnames(g1) == "id")] %>% sort()
   g1 <- g1[, c("id", cn)]
@@ -166,8 +166,7 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
 #' @param N Number of days to simulate
 #' @export
 genln <- function(dat, N) {
-  sigma <- sqrt(log(dat$sd^2/ dat$mean^2 + 1))
-  mu <- log(dat$mean) - sigma^2 / 2
+
   data.frame(id = seq(1, N), conc = rlnorm(N, mu, sigma))
 }
 
@@ -179,9 +178,16 @@ genln <- function(dat, N) {
 #'
 #' @param dat Matrix with columns corresponding to mean, sd
 #' @param N Number of days to simulate
+#' @param log Whether lognormal
 #' @export
-genn <- function(dat, N) {
-  data.frame(id = seq(1, N), conc = rnorm(N, dat$mean, dat$sd))
+genn <- function(dat, N, log = T) {
+  if(log) {
+    # these are the mean/sd of lognormal already
+    conc1 <- rlnorm(N,  dat$mean, dat$sd)
+  } else {
+    conc1 <- rnorm(N, dat$mean, dat$sd)
+  }
+  data.frame(id = seq(1, N), conc = conc1)
 }
 
 
@@ -197,15 +203,16 @@ genn <- function(dat, N) {
 #' @param meansd Matrix with columns corresponding to source, mean, sd
 #' @param N Number of days to simulate
 #' @param rmout Whether to remove largest
+#' @param log Whether lognormal
 #' @export
-geng <- function(meansd, N, rmout = F) {
+geng <- function(meansd, N, rmout = F, log = T) {
 
   # Add extra if need
   N1 <- ifelse(rmout, ceiling(1.0025 * N), N)
 
-  # Generate lognormal
+  # Generate lognormal/normal
   d1 <- tidyr::nest(meansd, data = c(mean, sd)) %>%
-    dplyr::mutate(rand = purrr::map(data, ~genn(., N1))) %>%
+    dplyr::mutate(rand = purrr::map(data, ~genn(., N1, log = log))) %>%
     tidyr::unnest(rand) %>%
     dplyr::select(., -data)
 
