@@ -11,18 +11,19 @@
 #' @param meansd Matrix with columns corresponding to source, type, mean, sd, defaults to meansd.
 #' @param sderr Standard deviation of error. If not noninformative stan, optional vector of 2 for error in ambient, error in local.
 #' @param rmout Whether to remove largest (outliers)
+#' @param log1 Whether to use lognormal for G
 #' @export
 #'
 simdat <- function(stanmodel, typesim, N, prof = prof, meansd = meansd,
-  sderr = NULL, rmout = F) {
+  sderr = NULL, rmout = F, log1 = T) {
 
-  outl <- simdat1(typesim, N[1],  prof, meansd, sderr[1], rmout)
+  outl <- simdat1(typesim, N[1],  prof, meansd, sderr[1], rmout, log1)
 
   # If not non-informative, need both ambient and local data
   if(stanmodel %in% c("joint", "penalty")) {
     warning("Joint/Penalty: not yet tested!")
     sderra <- ifelse(length(sderr) == 1, sderr, sderr[2])
-    outa <- simdat1("ambient", N[2], prof, meansd, sderra, rmout)
+    outa <- simdat1("ambient", N[2], prof, meansd, sderra, rmout, log1)
 
     out <- reorgout(outa, outl)
 
@@ -51,6 +52,7 @@ simdat <- function(stanmodel, typesim, N, prof = prof, meansd = meansd,
 #' @param meansd Matrix with columns corresponding to source, type, mean, sd, defaults to meansd.
 #' @param sderr Standard deviation of error.
 #' @param rmout Whether to remove largest (outliers)
+#' @param log1 Whether to use lognormal for G
 #' @export
 simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
                     meansd0 = meansd, sderr = NULL, rmout = F, log1 = T) {

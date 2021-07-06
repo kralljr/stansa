@@ -51,7 +51,7 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
   }
 
   # simulate data
-  dat <- simdat(stantype, typesim, N, prof, meansd, sderr, rmout)
+  dat <- simdat(stantype, typesim, N, prof, meansd, sderr, rmout, log1)
 
   if(stantype == "inform") {
     # Note type sim is still for local simulation
@@ -115,7 +115,7 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
 
   meta <- data.frame(starttime = starttime, endtime = endtime, fp = fp, notes = notes, typesim = typesim, stancode = stancode,
                      sderr = sderr1, N = N, seeds = paste(seeds, collapse = ", "),
-                     iter = iter,  chains = chains, call = cl, comments = "")
+                     iter = iter, chains = chains, call = cl, log1 = log1, comments = "")
   coln <- ifelse(file.exists(here("logs/sim-model-log.csv")), F, T)
   write.table(meta, file = here("logs/sim-model-log.csv"),
               sep = ",", row.names = F, col.names = coln, append = T)
