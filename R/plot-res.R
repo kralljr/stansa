@@ -531,7 +531,8 @@ biasplot <- function(stanres, dirname, filename,
                shape = 17) +
     ggplot2::geom_point(ggplot2::aes(x = varname1, y = truth), colour = "blue",
                shape = 8) +
-    ggplot2::facet_wrap(~var1, scales = "free")
+    ggplot2::facet_wrap(~var1, scales = "free") +
+    ggplot2::theme(axis.text.x = element_text(angle = 90))
 
 
   # G
@@ -542,7 +543,8 @@ biasplot <- function(stanres, dirname, filename,
                shape = 17) +
     ggplot2::geom_point(ggplot2::aes(x = varname1, y = truth), colour = "blue",
                shape = 8) +
-    ggplot2::facet_wrap(~col, scales = "free")
+    ggplot2::facet_wrap(~col, scales = "free") +
+    ggplot2::theme(axis.text.x = element_text(angle = 90))
 
   # If save
   if(pdf) {
