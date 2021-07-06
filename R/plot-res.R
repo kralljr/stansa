@@ -442,7 +442,7 @@ biasplot <- function(stanres, dirname, filename,
   sddf <- data.frame(sdscale, poll = colnames(dat$y[, -1]))
   prof1 <- dplyr::filter(prof, constraint == 1) %>% dplyr::select(poll, source)
   sdsource <-   dplyr::left_join(prof1, sddf) %>%
-    dplyr::select(source, sdscale) %>% na.omit() %>% dplyr::rename(sd1 = sdscale)
+    dplyr::select(source, sdscale) %>% na.omit() %>% dplyr::rename(sd1 = sdscale) %>%unique()
 
 
   # Get data for boxplot of posterior
@@ -480,7 +480,7 @@ biasplot <- function(stanres, dirname, filename,
     dplyr::mutate(row = factor(name, levels = mat1, labels = seq(1, length(mat1))),
            row = as.numeric(row),
            var1 = "vF",   truth = truth / sdscale * sd1) %>%
-    dplyr::select(-sdscale)
+    dplyr::select(-sdscale) %>% na.omit()
   musigg <- dplyr::filter(meansd, type == typesim) %>%
     dplyr::select(-type) %>%
     dplyr::mutate(row = as.numeric(factor(source))) %>%
