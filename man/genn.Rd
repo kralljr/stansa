@@ -4,12 +4,14 @@
 \alias{genn}
 \title{genn}
 \usage{
-genn(dat, N)
+genn(dat, N, log = T)
 }
 \arguments{
 \item{dat}{Matrix with columns corresponding to mean, sd}
 
 \item{N}{Number of days to simulate}
+
+\item{log}{Whether lognormal}
 }
 \description{
 \code{genn} Generate normal data from dataset

@@ -4,7 +4,7 @@
 \alias{geng}
 \title{geng}
 \usage{
-geng(meansd, N, rmout = F)
+geng(meansd, N, rmout = F, log = T)
 }
 \arguments{
 \item{meansd}{Matrix with columns corresponding to source, mean, sd}
@@ -12,6 +12,8 @@ geng(meansd, N, rmout = F)
 \item{N}{Number of days to simulate}
 
 \item{rmout}{Whether to remove largest}
+
+\item{log}{Whether lognormal}
 }
 \description{
 \code{geng} Simulate G matrix

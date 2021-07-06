@@ -10,7 +10,8 @@ simdat1(
   prof0 = prof,
   meansd0 = meansd,
   sderr = NULL,
-  rmout = F
+  rmout = F,
+  log1 = T
 )
 }
 \arguments{
