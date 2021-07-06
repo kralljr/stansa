@@ -23,6 +23,8 @@ simdat1(
 
 \item{rmout}{Whether to remove largest (outliers)}
 
+\item{log1}{Whether to use lognormal for G}
+
 \item{prof}{Profile data, defaults to prof.}
 
 \item{meansd}{Matrix with columns corresponding to source, type, mean, sd, defaults to meansd.}

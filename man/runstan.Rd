@@ -16,6 +16,7 @@ runstan(
   sderr = NULL,
   seeds = NULL,
   iter = 1000,
+  log1 = T,
   chains = 1,
   findamb = NULL,
   notes = NULL,
@@ -44,6 +45,8 @@ runstan(
 \item{sderr}{Standard deviation of error.  If not noninformative stan, can be vector of 2 for ambient local}
 
 \item{iter}{Number of iterations to run}
+
+\item{log1}{Whether to use lognormal for G}
 
 \item{chains}{Number of chains}
 

@@ -11,7 +11,8 @@ simdat(
   prof = prof,
   meansd = meansd,
   sderr = NULL,
-  rmout = F
+  rmout = F,
+  log1 = T
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ simdat(
 \item{sderr}{Standard deviation of error. If not noninformative stan, optional vector of 2 for error in ambient, error in local.}
 
 \item{rmout}{Whether to remove largest (outliers)}
+
+\item{log1}{Whether to use lognormal for G}
 }
 \description{
 \code{simdat} Simulate all data

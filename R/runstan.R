@@ -19,10 +19,11 @@
 #' @param iter Number of iterations to run
 #' @param chains Number of chains
 #' @param findamb Results from find ambient for informative
+#' @param log1 Whether to use lognormal for G
 #' @export
 runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
                     prof = prof, meansd = meansd, keep = "all",
-                    rmout = F, sderr = NULL, seeds = NULL, iter = 1000,
+                    rmout = F, sderr = NULL, seeds = NULL, iter = 1000, log1 = T,
                     chains = 1, findamb = NULL, notes = NULL, fp = NULL, names = F,...) {
 
   options(warn = 1)
