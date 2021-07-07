@@ -21,7 +21,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
                      filename = NULL, by = 5,
                      prof = prof, meansd = meansd, pdf = F,
                      # change heights for outputs
-                     hten = 150, wden = 20, htrh = 100, htbi = 10, wdbi = 10) {
+                     hten = 250, wden = 20, htrh = 100, htbi = 10, wdbi = 10) {
 
   # Get filename if not provisted
   if(is.null(filename)) {
