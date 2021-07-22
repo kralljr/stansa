@@ -21,10 +21,17 @@ simdat <- function(stanmodel, typesim, N, prof = prof, meansd = meansd,
 
   # If not non-informative, need both ambient and local data
   if(stanmodel %in% c("joint", "penalty")) {
-    warning("Joint/Penalty: not yet tested!")
-    sderra <- ifelse(length(sderr) == 1, sderr, sderr[2])
+
+    if(is.null(sderr)) {
+      sderra <- NULL
+    }else if(length(sderr) == 1) {
+      sderra <- sderr
+    } else {
+      sderra <- sderr[2]
+    }
     outa <- simdat1("ambient", N[2], prof, meansd, sderra, rmout, log1)
 
+    # reorganize simulated data from both
     out <- reorgout(outa, outl)
 
 
@@ -283,7 +290,6 @@ checkc2 <- function(dat) {
 #' @param outa Ambient data output from simdat1
 #' @param outl Local data output from simdat1
 reorgout <- function(outa, outl) {
-  warning("Not tested!")
 
 
   # add local/ambient names
@@ -298,97 +304,47 @@ reorgout <- function(outa, outl) {
   sourcel <- outl$true$f$source
 
   # get pollutant names
-  polla <- select(outa$true$y, -id) %>% colnames()
-  polll <- select(outl$true$y, -id) %>% colnames()
-  #all pollutants
-  Ps <- unique(c(polla, polll))
-  Ptot <- length(Ps)
+  polla <- dplyr::select(outa$true$y, -id) %>% colnames()
+  polll <- dplyr::select(outl$true$y, -id) %>% colnames()
 
   # which local sources in ambient (use their information) vs. which in local
   LsM <- which(sourcel %in% sourcea)
-  LsN <- which(!(sourcel %in% sourcea))
   Lmatch <- length(LsM)
-  Lnomatch <- length(LsN)
-  LsN <- ifelse(Lnomatch == 0, 0, LsN)
 
-  # get total sources
-  Ls <- unique(c(sourcea, sourcel))
-  Ltot <- length(Ls)
-  Lsa <- match(sourcea, Ls)
-  # remove no matching sources (not necessary for Fstartot)
-  sourcelmatch <- sourcel[sourcel %in% sourcea]
-  Lsl <- match(sourcelmatch, Ls)
-
+  # pollutants not in ambient
   BslnotA <- which(!(polll %in% polla))
   BlnotA <- length(BslnotA)
 
-  # Links to total
-  La <- outa$stan$La
-  Ba <- outa$stan$Ba
-  Bsa <- matrix(nrow = La, ncol = Ba)
-  hold <- match(polla, Ps)
-
-  for(l in 1 : La) {
-    for(b in 1 : Ba) {
-
-      pos <- outa$stan$posa[l, ]
-      Bsa[l, ] <- hold[pos]
-
-      # check
-      ae <- identical(polla[pos], Ps[hold[pos]])
-      #print(ae)
-      if(!ae) {
-        stop("Ambient matching off")
-      }
-    }
-  }
-
   # free except those not in ambient
   BlA <- outl$stan$Bl - BlnotA
-  Bsl <- matrix(nrow = Lmatch, ncol = BlA)
-  posl2 <- matrix(nrow = Lmatch, ncol = BlA)
 
-  hold <- match(polll, Ps)
+  # number of free elements in F
+  LBl2 <- outl$stan$LBl
+  # number of free elements not in ambient
+  LBl1 <- Lmatch * BlA
 
-  for(l in 1 : Lmatch) {
-    for(b in 1 : BlA) {
-      pos <- outl$stan$posl[LsM[l], ]
-      # Which matching pollutants ambient/local
-      pos <- pos[!(pos %in% BslnotA)]
-      posl2[l, ] <- pos
-      Bsl[l, ] <- hold[pos]
+  matchamb <- vector(length = LBl2)
 
-      # check
-      ae <- identical(polll[pos], Ps[hold[pos]])
-      if(!ae) {
-        stop("Local matching off")
-      }
+  # names for matching (mat1)
+  namesVa <- paste0(polla[outa$stan$posca], "-", sourcea[outa$stan$posra])
+  namesVl <- paste0(polll[outl$stan$poscl], "-", sourcel[outl$stan$posrl])
+
+  for(l in 1 : LBl2) {
+    # match between ambient vF and local vF
+    wh1 <- match(namesVl[l], namesVa)
+    if(!is.na(wh1)) {
+      matchamb[l] <- wh1
+    } else {
+      matchamb[l] <- 0
     }
-  }
-
-
-  # Fix arrays
-  LsM <- as.array(LsM)
-  LsN <- as.array(LsN)
-  BslnotA <- as.array(BslnotA)
-  Lsl <- as.array(Lsl)
-
-  if(Lmatch == 1) {
-    stop("Code cannot handle 1 matching source for joint currently")
   }
 
   # format output
-  extra <- list(Lmatch = Lmatch, LsM = LsM,
-                Ltot = Ltot, Lsa = Lsa, Lsl = Lsl,
-                BlnotA = BlnotA, BslnotA = BslnotA, BlA = BlA,
-                posl2 = posl2, Ptot = Ptot, Bsa = Bsa, Bsl = Bsl)
+  extra <- list(LBl1 = LBl1, LBl2 = LBl2, matchamb = matchamb)
 
-  if(Lnomatch > 0) {
-
-    extra <- append(extra, list(Lnomatch = Lnomatch, LsN = LsN))
-  }
 
   stan <- append(outa$stan, outl$stan) %>% append(., extra)
+  stan <- stan[-which(names(stan) == "LBl")]
   true <- append(outa$true, outl$true)
   out <- list(stan = stan, true = true)
 
