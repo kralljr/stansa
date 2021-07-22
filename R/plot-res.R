@@ -484,12 +484,25 @@ biasplot <- function(stanres, dirname, filename,
   musigg <- dplyr::filter(meansd, type == typesim) %>%
     dplyr::select(-type) %>%
     dplyr::mutate(row = as.numeric(factor(source))) %>%
+
+    # new
+    dplyr::mutate(mean = exp(mean + sd^2/2), var = exp(sd^2 - 1) * mean^2) %>%
+    dplyr::select(-sd) %>%
     tidyr::pivot_longer(-c(source, row),
                  names_to = "var1", values_to = "truth") %>%
-    dplyr::mutate(var1 = factor(var1, levels = c("mean", "sd"),
-                         labels = c("mug", "sigmag"))) %>%
+
+    # old
+    # tidyr::pivot_longer(-c(source, row),
+    #              names_to = "var1", values_to = "truth") %>%
+    # dplyr::mutate(var1 = factor(var1, levels = c("mean", "sd"),
+    #                      labels = c("mug", "sigmag"))) %>%
     dplyr::full_join(sdsource) %>%
-    dplyr::mutate(truth = truth / sd1) %>% dplyr::select(-sd1) %>%
+    #dplyr::mutate(truth = truth / sd1) %>%
+
+
+    # for lognormal? i not work
+    # dplyr::mutate(truth = ifelse(var1 == "mug", truth + log(sd1)), truth) %>%
+    dplyr::select(-sd1) %>%
     dplyr::rename(name = source)
   P <- unique(prof$poll) %>% length()
 
