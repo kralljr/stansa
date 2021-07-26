@@ -21,11 +21,42 @@ plotstan <- function(typesim, stanres, dirname = NULL,
                      filename = NULL, by = 5,
                      prof = prof, meansd = meansd, pdf = F,
                      # change heights for outputs
-                     hten = 250, wden = 20, htrh = 100, htbi = 10, wdbi = 10) {
+                     hten = 250, wden = 20, htrh = 100, htbi = 10, wdbi = 10,
+                     typeplot = "none") {
 
   # Get filename if not provisted
   if(is.null(filename)) {
     filename <- typesim
+  }
+
+  # if joint/sparse
+  name1 <- names(stanres$dat)
+  name2 <- names(stanres$standat)
+  if("ya" %in% name1) {
+    if(typeplot == "local") {
+      keeps <- name1[grep("l", name1)]
+      keeps2 <- name2[grep("l", name2)]
+      keeps2 <- keeps2[-which(keeps2 %in% c( "LBl2", "LBl1"))]
+
+
+    } else {
+      keeps <- name1[grep("a", name1)]
+      keeps <- keeps[-which(keeps %in% c("sigmaepsl", "namesfl"))]
+
+      keeps2 <- name2[grep("a", name2)]
+      keeps2 <- keeps2[-which(keeps2 %in% c("zeromatl", "onematl", "matchamb", "LBa"))]
+      # use ambient truth
+      typesim <- "ambient"
+    }
+
+    stanres$dat <- stanres$dat[keeps]
+    nchar1 <- nchar(names(stanres$dat))
+    names(stanres$dat) <- substr(names(stanres$dat), 1, nchar1- 1)
+
+
+    stanres$standat <- stanres$standat[keeps2]
+    nchar1 <- nchar(names(stanres$standat))
+    names(stanres$standat) <- substr(names(stanres$standat), 1, nchar1- 1)
   }
 
   # Get necessary input
@@ -41,13 +72,15 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 
 
   # # Plots
-  tr <- mytraceplot(stanres, dirname, filename, by = by, labels = labels)
-  pa <- pairsplot(stanres, dirname, filename, mat1, sources, cons)
-  en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden, labels = labels)
-  rh <- rhatplot(stanres, dirname, filename, pdf, ht = htrh)
+  # if(typeplot != "ambient") {
+  #     tr <- mytraceplot(stanres, dirname, filename, by = by, labels = labels)
+  #     en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden, labels = labels)
+  #     rh <- rhatplot(stanres, dirname, filename, pdf, ht = htrh)
+  # }
+  # pa <- pairsplot(stanres, dirname, filename, mat1, sources, cons, typeplot)
   bi <- biasplot(stanres, dirname, filename,
         mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi,
-        labels = labels)
+        labels = labels, typeplot)
 
 
   # output (save energy, rhat, bias)
@@ -164,17 +197,22 @@ getnames <- function(var, labels = labels) {
 
   varname <- varn(var)
   var1 <- data.frame(var = var, varname = varname)
-  var1 <- dplyr::mutate(var1, varid = ifelse(varname == "G", coln(var), rown(var)),
-                 varid2 = ifelse(varname == "G", rownG(var), rown(var)))
+  var1 <- dplyr::mutate(var1, varid = ifelse(varname %in% c("G", "Ga", "Gl"), coln(var), rown(var)),
+                 varid2 = ifelse(varname %in% c("G", "Ga", "Gl"), rownG(var), rown(var)))
 
   sources <- labels$source[var1$varid]
   mat1 <- labels$mat1[var1$varid]
   cons <- labels$cons[var1$varid]
 
   var1 <- dplyr::mutate(var1, sources = sources, mat1 = mat1, cons = cons,
-                 out = dplyr::case_when(varname %in% c("sigmag", "mug", "G") ~ sources,
-                                 varname %in% c("nvF", "vF") ~ mat1,
-                                 varname %in% "sigmaeps" ~ cons), varname1 = paste0(varname, varid2, "-", out))
+                 out = dplyr::case_when(varname %in% c("sigmag", "mug", "G",
+                                                       "sigmaga", "muga", "Ga",
+                                                       "sigmagl", "mugl", "Gl") ~ sources,
+                                 varname %in% c("nvF", "vF",
+                                                "nvFa", "vFa",
+                                                "nvFl", "vFl") ~ mat1,
+                                 varname %in% c("sigmaeps",
+                                                "sigmaepsa","sigmaepsl")~ cons), varname1 = paste0(varname, varid2, "-", out))
 
   var1$varname1
 }
@@ -249,21 +287,41 @@ mytraceplot <- function(stanres, dirname, filename, by = 5, labels = labels) {
 #' @param mat1 Names of free elements of F
 #' @param sources Names of sources
 #' @export
-pairsplot <- function(stanres, dirname, filename, mat1, sources, cons) {
+pairsplot <- function(stanres, dirname, filename, mat1, sources, cons, typeplot) {
 
-  filename1 <- paste0(filename, "-pairs.pdf")
+  if(typeplot != "ambient") {
+    filename1 <- paste0(filename, "-pairs.pdf")
+
+  }else {
+    filename1 <- paste0(filename, "-ambient-pairs.pdf")
+
+  }
   pdf(here::here(dirname, filename1))
 
   # mu G/sigma G
-  lab1 <- paste0(rep(c("mug", "sigmag"), each = length(sources)), rep(sources, 2))
-  pairs(stanres$fit, pars = c("mug", "sigmag"), labels = lab1, condition = "energy")
+  musig <- c("mug", "sigmag")
+  if(typeplot == "local") {
+      musig <- paste0(musig, "l")
+      append1 <- "l"
+      n1 <- 3
+  } else if(typeplot == "ambient") {
+      musig <- paste0(musig, "a")
+      append1 <- "a"
+      n1 <- 3
+  }else {
+    append1 <- ""
+    n1 <- 2
+  }
+  lab1 <- paste0(rep(musig, each = length(sources)), rep(sources, 2))
+  pairs(stanres$fit, pars = musig, labels = lab1, condition = "energy")
 
   # All vf
-  types <- c("mug", "sigmag")
+  types <- musig
   # only vF exactly
   #nF <- names(stanres$fit)[grep("vF", names(stanres$fit))] %>% length()
-  nF <- substr(names(stanres$fit), 1, 2)
-  nF <- length(which(nF == "vF"))
+  nF <- substr(names(stanres$fit), 1, n1)
+  vfn <- paste0("vF", append1)
+  nF <- length(which(nF == vfn))
   nF1 <- ceiling(nF / 6)
   for(j in 1 : 2) {
     k <- 1
@@ -277,7 +335,7 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources, cons) {
       lab1 <- c(first5, mat1[k : l])
       #print(lab1)
       pairs(stanres$fit, labels = lab1,
-            pars = c(types[j], paste0("vF[", (k : l), "]")), condition = "energy")
+            pars = c(types[j], paste0(vfn, "[", (k : l), "]")), condition = "energy")
 
       k <- k + 6
     }
@@ -285,7 +343,7 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources, cons) {
 
   lab1 <- paste0("sigmaeps-", cons)
   pairs(stanres$fit, labels = lab1,
-        pars = c("sigmaeps"), condition = "energy")
+        pars = c(paste0("sigmaeps", append1)), condition = "energy")
 
   dev.off()
 
@@ -432,8 +490,16 @@ biasplot <- function(stanres, dirname, filename,
                      mat1,
   prof = prof, meansd = meansd, typesim = typesim,
   by = 5,
-  pdf = F, ht = 10, wd = 10, labels = labels) {
+  pdf = F, ht = 10, wd = 10, labels = labels, typeplot) {
 
+
+  if(typeplot == "local") {
+      append1 <- "l"
+  } else if(typeplot == "ambient"){
+      append1 <- "a"
+  }else {
+    append1 <- ""
+  }
   # get scaling info
   dat <- stanres$dat
   mean1 <- as.matrix(dat$g[, -1]) %*% as.matrix(dat$f[, -1])
@@ -448,28 +514,51 @@ biasplot <- function(stanres, dirname, filename,
   # Get data for boxplot of posterior
   iters <- dim(stanres$fit)[1]
   sel <- seq(1, iters, by = by)
-  params <- rstan::extract(stanres$fit, permuted = F) %>%
+
+  pars1 <- paste0(c("mug", "sigmag", "sigmaeps", "G", "vF"), append1)
+
+  params <- rstan::extract(stanres$fit, pars = pars1, permuted = F) %>%
     tibble::as_tibble() %>%
     tibble::rowid_to_column(., "iters") %>%
+    #select(contains("chain:1")) %>% # needed if more than 1 chain?
+    dplyr::slice(sel) %>%
     tidyr::pivot_longer(., names_to = "var", values_to = "val", -iters) %>%
-    dplyr::mutate(., chain = as.numeric(substr(var, 7, 7)), var = substring(var, 8)) %>%
-    dplyr::filter(chain == 1, iters %in% sel) %>%
-    dplyr::select(-c(iters, chain)) %>%
-    tidyr::separate(var, c("var1", "rowcol"), "\\[") %>%
+    dplyr::mutate(., var = substring(var, 9)) #chain = as.numeric(substr(var, 7, 7)),
+    #dplyr::filter(chain == 1, iters %in% sel) %>%
+
+
+  params1 <- dplyr::select(params, var) %>% unique() %>%
+    dplyr::mutate(var1 = var) %>%
+    tidyr::separate(var1, c("var1", "rowcol"), "\\[") %>%
     tidyr::separate(rowcol, c("row", "col"), ",") %>%
-    dplyr::mutate(var1 = gsub("\\.", "", var1),
-           col = gsub("\\]", "", col),
+    dplyr::mutate(col = gsub("\\]", "", col),
            row = gsub("\\]", "", row),
            row = as.numeric(row),
-           col = as.numeric(col)) %>%
-    dplyr::filter(!(var1 %in% c("nvF", "lp__")))
+           col = as.numeric(col))
+    #dplyr::filter(!(var1 %in% c(paste0("nvF", append1), "lp__")))
 
+  params <- dplyr::full_join(params, params1) %>%
+    dplyr::select(-c(iters, var))
+
+  params <- params %>%
+    dplyr::group_by(var1, row, col) %>%
+    dplyr::summarize(q25 = quantile(val, probs = 0.25),
+                     med = median(val),
+                     q75 = quantile(val, probs = 0.75),
+                     mean = mean(val)) %>%
+    dplyr::ungroup()
+
+  # Find posterior mean
+  # means <- params
+  # means <- dplyr::group_by(params) %>%
+  #   dplyr::group_by(var1, row, col) %>%
+  #   dplyr::summarize(mean = mean(val))
 
   # truth
   truth <- stanres$dat
   g <- dplyr::rename(truth$g, row = id) %>%
     tidyr::pivot_longer(-row, values_to = "truth")  %>%
-    dplyr::mutate(col = as.numeric(factor(name)), var1 = "G", source = name) %>%
+    dplyr::mutate(col = as.numeric(factor(name)), var1 = paste0("G", append1), source = name) %>%
     dplyr::full_join(sdsource) %>%
     dplyr::mutate(truth = truth / sd1) %>% dplyr::select(-c(source, sd1))
   f <- dplyr::filter(prof, type == typesim, is.na(constraint)) %>%
@@ -479,7 +568,7 @@ biasplot <- function(stanres, dirname, filename,
     tidyr::unite(name, c(source, poll), sep = "-") %>%
     dplyr::mutate(row = factor(name, levels = mat1, labels = seq(1, length(mat1))),
            row = as.numeric(row),
-           var1 = "vF",   truth = truth / sdscale * sd1) %>%
+           var1 = paste0("vF", append1),   truth = truth / sdscale * sd1) %>%
     dplyr::select(-sdscale) %>% na.omit()
   musigg <- dplyr::filter(meansd, type == typesim) %>%
     dplyr::select(-type) %>%
@@ -510,19 +599,19 @@ biasplot <- function(stanres, dirname, filename,
   se1 <- se1 / sdscale
 
 
-  sigmaeps <- data.frame(row = seq(1, P), var1 = "sigmaeps", truth = se1)
+  sigmaeps <- data.frame(row = seq(1, P), var1 = paste0("sigmaeps", append1), truth = se1)
   truth <- dplyr::full_join(g, f) %>%
     dplyr::full_join(musigg) %>% dplyr::full_join(sigmaeps)
 
   # Find posterior mean
-  means <- dplyr::group_by(params) %>%
-    dplyr::group_by(var1, row, col) %>%
-    dplyr::summarize(mean = mean(val))
+  # means <- dplyr::group_by(params) %>%
+  #   dplyr::group_by(var1, row, col) %>%
+  #   dplyr::summarize(mean = mean(val))
 
   # combine
   dat <- dplyr::full_join(params, truth) %>%
-    dplyr::full_join(means) %>%
-    dplyr::mutate(varid = ifelse(var1 == "G", col, row),
+    #dplyr::full_join(means) %>%
+    dplyr::mutate(varid = ifelse(var1 == paste0("G", append1), col, row),
            varid2 = row)
 
   sources <- labels$source[dat$varid]
@@ -530,16 +619,29 @@ biasplot <- function(stanres, dirname, filename,
   cons <- labels$cons[dat$varid]
 
   dat <- dplyr::mutate(dat, sources = sources, mat1 = mat1, cons = cons,
-                 out = dplyr::case_when(var1 %in% c("sigmag", "mug", "G") ~ sources,
-                                 var1 %in% c("nvF", "vF") ~ mat1,
-                                 var1 %in% "sigmaeps" ~ cons),
+
+                 out = dplyr::case_when(var1 %in% c("sigmag", "mug", "G",
+                                                       "sigmaga", "muga", "Ga",
+                                                       "sigmagl", "mugl", "Gl") ~ sources,
+                                        var1 %in% c("nvF", "vF",
+                                                       "nvFa", "vFa",
+                                                       "nvFl", "vFl") ~ mat1,
+                                        var1 %in% c("sigmaeps",
+                                                       "sigmaepsa","sigmaepsl")~ cons),
                 varname1 = paste0(var1, varid2, "-", out))
 
 
   # all but G
-  dat1 <- dplyr::filter(dat, var1 != "G")
+  append2 <- ifelse(append1 == "l", "a", "l")
+  dat1 <- dplyr::filter(dat, !(var1 %in% c(paste0("G", append1), paste0("mug", append2),
+                                           paste0("sigmag", append2),
+                                           paste0("sigmaeps", append2)) | substr(var1, 1, 2) %in% c("lG", "nv")))
   g1 <- ggplot2::ggplot(data = dat1) +
-    ggplot2::geom_boxplot(ggplot2::aes(x = varname1, y = val)) +
+    # ggplot2::geom_boxplot(ggplot2::aes(x = varname1, y = val)) +
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = q25)) +
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = med)) +
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = q75)) +
+
     ggplot2::geom_point(ggplot2::aes(x = varname1, y = mean), colour = "red",
                shape = 17) +
     ggplot2::geom_point(ggplot2::aes(x = varname1, y = truth), colour = "blue",
@@ -549,9 +651,13 @@ biasplot <- function(stanres, dirname, filename,
 
 
   # G
-  dat1 <- dplyr::filter(dat, var1 == "G")
+  dat1 <- dplyr::filter(dat, var1 == paste0("G", append1))
   g2 <- ggplot2::ggplot(data = dat1) +
-    ggplot2::geom_boxplot(ggplot2::aes(x = varname1, y = val)) +
+    # ggplot2::geom_boxplot(ggplot2::aes(x = varname1, y = val)) +
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = q25)) +
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = med)) +
+    ggplot2::geom_point(ggplot2::aes(x = varname1, y = q75)) +
+
     ggplot2::geom_point(ggplot2::aes(x = varname1, y = mean), colour = "red",
                shape = 17) +
     ggplot2::geom_point(ggplot2::aes(x = varname1, y = truth), colour = "blue",
@@ -561,12 +667,22 @@ biasplot <- function(stanres, dirname, filename,
 
   # If save
   if(pdf) {
-    filename1 <- paste0(filename, "-biasplot-noG.pdf")
+    if(typeplot != "ambient") {
+      filename1 <- paste0(filename, "-biasplot-noG.pdf")
+    } else {
+      filename1 <- paste0(filename, "-biasplot-ambient-noG.pdf")
+
+    }
 
     ggplot2::ggsave(here::here(file.path(dirname, filename1)),
            g1, height = ht, limitsize = F)
 
-    filename1 <- paste0(filename, "-biasplot-G.pdf")
+    if(typeplot != "ambient") {
+      filename1 <- paste0(filename, "-biasplot-G.pdf")
+    } else {
+      filename1 <- paste0(filename, "-biasplot-ambient-G.pdf")
+
+    }
 
     ggplot2::ggsave(here::here(file.path(dirname, filename1)),
            g2, height = ht, limitsize = F)
