@@ -46,10 +46,6 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
                      sapply(strsplit(substring(stancode, 9), "\\."), function(x) x[[1]]),
                      ifelse(!is.null(stantype), stantype, "none"))
 
-  # all sources match
-  if(typesim != "local4" & stantype == "joint") {
-    stancode <- "stan-sa-joint-allmatch.stan"
-  }
 
   # simulate data
   dat <- simdat(stantype, typesim, N, prof, meansd, sderr, rmout, log1)
