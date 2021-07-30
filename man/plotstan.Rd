@@ -17,7 +17,8 @@ plotstan(
   wden = 20,
   htrh = 100,
   htbi = 10,
-  wdbi = 10
+  wdbi = 20,
+  typeplot = "none"
 )
 }
 \arguments{

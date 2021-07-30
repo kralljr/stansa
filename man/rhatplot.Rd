@@ -4,7 +4,7 @@
 \alias{rhatplot}
 \title{rhatplot}
 \usage{
-rhatplot(stanres, dirname, filename, pdf = F, ht = 100)
+rhatplot(stanres, dirname, filename, pdf = F, ht = 120)
 }
 \arguments{
 \item{stanres}{Output from runstan}

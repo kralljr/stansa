@@ -11,7 +11,8 @@ energyplot(
   pdf = F,
   ht = 150,
   wd = 20,
-  labels = labels
+  labels = labels,
+  typeplot = "none"
 )
 }
 \arguments{

@@ -16,7 +16,8 @@ biasplot(
   pdf = F,
   ht = 10,
   wd = 10,
-  labels = labels
+  labels = labels,
+  typeplot
 )
 }
 \arguments{
