@@ -21,7 +21,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
                      filename = NULL, by = 5,
                      prof = prof, meansd = meansd, pdf = F,
                      # change heights for outputs
-                     hten = 250, wden = 20, htrh = 100, htbi = 10, wdbi = 10,
+                     hten = 250, wden = 20, htrh = 100, htbi = 10, wdbi = 20,
                      typeplot = "none") {
 
   # Get filename if not provisted
@@ -72,20 +72,26 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 
 
   # # Plots
-  # if(typeplot != "ambient") {
-  #     tr <- mytraceplot(stanres, dirname, filename, by = by, labels = labels)
-  #     en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden, labels = labels)
-  #     rh <- rhatplot(stanres, dirname, filename, pdf, ht = htrh)
-  # }
-  # pa <- pairsplot(stanres, dirname, filename, mat1, sources, cons, typeplot)
+  if(typeplot != "ambient") {
+      tr <- mytraceplot(stanres, dirname, filename, by = by, labels = labels)
+      en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden,
+                       labels = labels, typeplot = typeplot)
+      rh <- rhatplot(stanres, dirname, filename, pdf, ht = htrh)
+      out <- list(tr = tr, en = en, rh = rh, labels = labels,
+                  free = mat1, sources = sources)
+  } else {
+    out <- list()
+  }
+  pa <- pairsplot(stanres, dirname, filename, mat1, sources, cons, typeplot)
   bi <- biasplot(stanres, dirname, filename,
         mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi,
         labels = labels, typeplot)
 
+  out$pa <- pa
+  out$bi <- bi
 
-  # output (save energy, rhat, bias)
-  list(free = mat1, sources = sources,
-       en = en, rh = rh, bi = bi, labels = labels)
+  out
+
 }
 
 
@@ -354,6 +360,65 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources, cons, typeplot)
 
 
 
+
+
+#' \code{pairsplot} Create pairs plots for stan output
+#'
+#' @title pairsplot
+#'
+#' @param stanres Output from runstan
+#' @param dirname Folder name where to save plots
+#' @param filename Base filename
+#' @param mat1 Names of free elements of F
+#' @param sources Names of sources
+#' @export
+pairsjoint <- function(stanres, dirname, filename) {
+
+  filename1 <- paste0(filename, "-pairs-joint.pdf")
+
+  pdf(here::here(dirname, filename1))
+
+  pairs(stanres$fit, pars = musig, labels = lab1, condition = "energy")
+
+  # All vf
+  types <- musig
+  # only vF exactly
+  #nF <- names(stanres$fit)[grep("vF", names(stanres$fit))] %>% length()
+  nF <- substr(names(stanres$fit), 1, n1)
+  vfn <- paste0("vF", append1)
+  nF <- length(which(nF == vfn))
+  nF1 <- ceiling(nF / 6)
+  for(j in 1 : 2) {
+    k <- 1
+    first5 <- paste0(rep(types[j], length(sources)), sources)
+    #print(c("first5", first5))
+
+    # number of pages/plots
+    for(i in 1 : nF1) {
+      l <- min(c((k + 5), nF))
+      #print(c(k, l))
+      lab1 <- c(first5, mat1[k : l])
+      #print(lab1)
+      pairs(stanres$fit, labels = lab1,
+            pars = c(types[j], paste0(vfn, "[", (k : l), "]")), condition = "energy")
+
+      k <- k + 6
+    }
+  }
+
+  lab1 <- paste0("sigmaeps-", cons)
+  pairs(stanres$fit, labels = lab1,
+        pars = c(paste0("sigmaeps", append1)), condition = "energy")
+
+  dev.off()
+
+}
+
+
+
+
+
+
 #' \code{energyplot} Create energy plots for stan output
 #'
 #' @title energyplot
@@ -367,12 +432,27 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources, cons, typeplot)
 #' @param labels label dataset
 #' @export
 energyplot <- function(stanres, dirname, filename, pdf = F,
-                       ht = 150, wd = 20, labels = labels) {
+                       ht = 150, wd = 20, labels = labels, typeplot = "none") {
 
   # Which items to save
   start1 <- dim(stanres$fit)[1] *2
-  nmax <- start1 - start1 / 2
+  nmax <- start1 - start1 * 3/4
   cn <- dim(stanres$fit)[2]
+
+  if(typeplot != "none") {
+    pars1 <- c("Ga", "Gl",
+                "vFa", "vFl",
+                "sigmaga", "sigmagl",
+               "muga", "mugl",
+                "sigmaepsa", "sigmaepsl")
+  } else {
+    pars1 <- c("G",
+               "vF",
+               "sigmag",
+               "mug",
+               "sigmaeps")
+  }
+
   energy <- rstan::get_sampler_params(stanres$fit)
   names(energy) <- paste0("chain", seq(1, cn))
 
@@ -388,7 +468,7 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
     tidyr::unnest(., value)
 
   # fix names
-  params <- rstan::extract(stanres$fit, permuted = F) %>%
+  params <- rstan::extract(stanres$fit, permuted = F, pars = pars1) %>%
     tibble::as_tibble() %>%
     tibble::rowid_to_column(., "iters") %>%
     tidyr::pivot_longer(., names_to = "var", values_to = "val", -iters)
@@ -452,7 +532,7 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
 #' @param pdf Whether to save pdf, defaults to F
 #' @param ht Height of pdf
 #' @export
-rhatplot <- function(stanres, dirname, filename, pdf = F, ht = 100) {
+rhatplot <- function(stanres, dirname, filename, pdf = F, ht = 120) {
 
   # Get Rhat and plot
   rhats <- bayesplot::rhat(stanres$fit)
@@ -624,8 +704,7 @@ biasplot <- function(stanres, dirname, filename,
                                                        "sigmaga", "muga", "Ga",
                                                        "sigmagl", "mugl", "Gl") ~ sources,
                                         var1 %in% c("nvF", "vF",
-                                                       "nvFa", "vFa",
-                                                       "nvFl", "vFl") ~ mat1,
+                                                       "nvFa", "vFa") ~ mat1,
                                         var1 %in% c("sigmaeps",
                                                        "sigmaepsa","sigmaepsl")~ cons),
                 varname1 = paste0(var1, varid2, "-", out))
@@ -675,7 +754,7 @@ biasplot <- function(stanres, dirname, filename,
     }
 
     ggplot2::ggsave(here::here(file.path(dirname, filename1)),
-           g1, height = ht, limitsize = F)
+           g1, height = ht, width = wd, limitsize = F)
 
     if(typeplot != "ambient") {
       filename1 <- paste0(filename, "-biasplot-G.pdf")
@@ -685,7 +764,7 @@ biasplot <- function(stanres, dirname, filename,
     }
 
     ggplot2::ggsave(here::here(file.path(dirname, filename1)),
-           g2, height = ht, limitsize = F)
+           g2, height = ht, width = wd, limitsize = F)
   }
 
   list(g1, g2)
