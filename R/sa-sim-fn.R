@@ -313,15 +313,14 @@ reorgout <- function(outa, outl) {
 
   # pollutants not in ambient
   BslnotA <- which(!(polll %in% polla))
-  BlnotA <- length(BslnotA)
-
-  # free except those not in ambient
-  BlA <- outl$stan$Bl - BlnotA
+  BlA <- length(BslnotA)
 
   # number of free elements in F
   LBl2 <- outl$stan$LBl
   # number of free elements not in ambient
-  LBl1 <- Lmatch * BlA
+  LsN <- which(!(sourcel %in% sourcea))
+  Lnomatch <- length(LsN)
+  LBl1 <- Lmatch * BlA + Lnomatch * outl$stan$Bl
 
   matchamb <- vector(length = LBl2)
 
