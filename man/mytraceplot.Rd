@@ -4,7 +4,7 @@
 \alias{mytraceplot}
 \title{mytraceplot}
 \usage{
-mytraceplot(stanres, dirname, filename, by = 5, labels = labels)
+mytraceplot(stanres, dirname, filename, by = 5, labels = NULL)
 }
 \arguments{
 \item{stanres}{Output from runstan}
