@@ -97,6 +97,55 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 
 
 
+
+#' \code{getdat} Get ambient vs. local data
+#'
+#' @title getdat
+#'
+#' @param standat Stan data
+#' @param typeplot Ambient or local
+#' @param L number of sources
+#' @export
+#'
+getdat <- function(stanres, typeplot, L) {
+
+  name2 <- names(stanres$data)
+
+  if("ya" %in% name2) {
+    if(typeplot == "local") {
+      keeps2 <- name2[grep("l", name2)]
+      keeps2 <- keeps2[-which(keeps2 %in% c( "LBl2", "LBl1"))]
+
+
+    } else {
+
+      keeps2 <- name2[grep("a", name2)]
+      keeps2 <- keeps2[-which(keeps2 %in% c("zeromatl", "onematl", "matchamb", "LBa"))]
+      # use ambient truth
+      typesim <- "ambient"
+    }
+
+
+    stanres$data <- stanres$data[keeps2]
+    nchar1 <- nchar(names(stanres$data))
+    names(stanres$data) <- substr(names(stanres$data), 1, nchar1- 1)
+  }
+
+  P <- ncol(stanres$data$y)
+
+  zeromat <- standat$zeromat
+  mat1 <- matrix(paste0(rep(sources, P), "-",
+                        rep(colnames(zeromat), each = L)),
+                 byrow = F, nrow = L)
+  mat1 <- as.vector(mat1)[(as.vector(zeromat)) != 0]
+
+  list(stanres = stanres, mat1 = mat1)
+}
+
+
+
+
+
 #' \code{mat1fun} Get constraints with labels
 #'
 #' @title mat1fun
@@ -234,7 +283,7 @@ getnames <- function(var, labels = labels) {
 #' @param filename Base filename
 #' @param by Skips for traceplot
 #' @export
-mytraceplot <- function(stanres, dirname, filename, by = 5, labels = labels) {
+mytraceplot <- function(stanres, dirname, filename, by = 5, labels = NULL) {
   start1 <- dim(stanres$fit)[1]
   res1 <- unlstan(stanres$fit, by1 = by, start = start1)
 #chain iters var    value
@@ -257,7 +306,12 @@ mytraceplot <- function(stanres, dirname, filename, by = 5, labels = labels) {
     res0 <- dplyr::filter(res1, var == vars[i])
     min1 <- min(res0$value, na.rm = T)
     max1 <- max(res0$value, na.rm = T)
-    lab <- getnames(vars[i], labels)
+    if(!is.null(labels)) {
+      lab <- getnames(vars[i], labels)
+
+    } else {
+      lab <- vars[i]
+    }
     for(j in 1 : length(chains)) {
       res2 <- dplyr::filter(res0, chain == chains[j]) # %>% arrange(iters)
       if(j == 1) {
