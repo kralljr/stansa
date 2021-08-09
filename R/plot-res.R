@@ -515,7 +515,7 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
     data.frame(x) %>%
       dplyr::select(., energy__) %>%
       dplyr::mutate(., iters = seq(1, nrow(x))) %>%
-      dplyr::filter(., iters > nmax )
+      dplyr::filter(., iters >= nmax )
   }) %>%
     tibble::as_tibble_col(.) %>%
     tibble::rowid_to_column(., "chain") %>%
@@ -567,7 +567,7 @@ energyplot <- function(stanres, dirname, filename, pdf = F,
            g1, height = ht, width = wd, limitsize = F)
   }
 
-  list(g1, cors)
+  list(g1 = g1, cors = cors)
 }
 
 
