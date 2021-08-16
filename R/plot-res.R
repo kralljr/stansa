@@ -709,8 +709,8 @@ biasplot <- function(stanres, dirname, filename,
     dplyr::mutate(row = as.numeric(factor(source))) %>%
 
     # new
-    dplyr::mutate(mean = exp(mean + sd^2/2), var = exp(sd^2 - 1) * mean^2) %>%
-    dplyr::select(-sd) %>%
+    dplyr::mutate(meang = exp(mean + sd^2/2), sdg = sqrt((exp(sd^2) - 1) * meang^2)) %>%
+    dplyr::select(-c(mean, sd)) %>%
     tidyr::pivot_longer(-c(source, row),
                  names_to = "var1", values_to = "truth") %>%
 
@@ -720,7 +720,7 @@ biasplot <- function(stanres, dirname, filename,
     # dplyr::mutate(var1 = factor(var1, levels = c("mean", "sd"),
     #                      labels = c("mug", "sigmag"))) %>%
     dplyr::full_join(sdsource) %>%
-    #dplyr::mutate(truth = truth / sd1) %>%
+    dplyr::mutate(truth = truth / sd1) %>%
 
 
     # for lognormal? i not work
@@ -732,18 +732,32 @@ biasplot <- function(stanres, dirname, filename,
   se1 <- apply(mean1, 2, sd) / 10
   se1 <- se1 / sdscale
 
-
-  sigmaeps <- data.frame(row = seq(1, P), var1 = paste0("sigmaeps", append1), truth = se1)
+  # sigmaeps is variance
+  sigmaeps <- data.frame(row = seq(1, P), var1 = paste0("sigmaeps", append1), truth = (se1)^2)
   truth <- dplyr::full_join(g, f) %>%
     dplyr::full_join(musigg) %>% dplyr::full_join(sigmaeps)
 
   # Find posterior mean
-  # means <- dplyr::group_by(params) %>%
-  #   dplyr::group_by(var1, row, col) %>%
-  #   dplyr::summarize(mean = mean(val))
+
+  gval <- dplyr::filter(params, var1 == "G") %>%
+    dplyr::group_by(col) %>%
+    dplyr::summarize(sdg= sd(mean), meang = mean(mean)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(mug = log(meang^2/sqrt(sdg^2 + meang^2)), sigmag = (log(1 + sdg^2/meang^2))) %>%
+    tidyr::pivot_longer(-c(col),
+                        names_to = "var1", values_to = "mean") %>%
+    dplyr::rename(row = col)
+
+  gval1 <- dplyr::filter(gval, var1 %in% c("meang", "sdg"))
+  gval2 <- dplyr::filter(gval, !(var1 %in% c("meang", "sdg"))) %>%
+    dplyr::rename(truth = mean)
+
+
 
   # combine
   dat <- dplyr::full_join(params, truth) %>%
+    dplyr::full_join(gval1) %>%
+    dplyr::full_join(gval2) %>%
     #dplyr::full_join(means) %>%
     dplyr::mutate(varid = ifelse(var1 == paste0("G", append1), col, row),
            varid2 = row)
@@ -756,7 +770,7 @@ biasplot <- function(stanres, dirname, filename,
 
                  out = dplyr::case_when(var1 %in% c("sigmag", "mug", "G",
                                                        "sigmaga", "muga", "Ga",
-                                                       "sigmagl", "mugl", "Gl") ~ sources,
+                                                       "sigmagl", "mugl", "Gl", "sdg", "meang") ~ sources,
                                         var1 %in% c("nvF", "vF",
                                                        "nvFa", "vFa") ~ mat1,
                                         var1 %in% c("sigmaeps",
@@ -780,6 +794,7 @@ biasplot <- function(stanres, dirname, filename,
     ggplot2::geom_point(ggplot2::aes(x = varname1, y = truth), colour = "blue",
                shape = 8) +
     ggplot2::facet_wrap(~var1, scales = "free") +
+    ggplot2::ylab("Value") +
     ggplot2::theme(axis.text.x =  ggplot2::element_text(angle = 90))
 
 
@@ -796,6 +811,7 @@ biasplot <- function(stanres, dirname, filename,
     ggplot2::geom_point(ggplot2::aes(x = varname1, y = truth), colour = "blue",
                shape = 8) +
     ggplot2::facet_wrap(~col, scales = "free") +
+    ggplot2::ylab("Value") +
     ggplot2::theme(axis.text.x =  ggplot2::element_text(angle = 90))
 
   # If save
