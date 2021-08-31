@@ -72,7 +72,14 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 
 
   # # Plots
-  if(typeplot != "ambient") {
+
+  if(typeplot == "bias") {
+    bi <- biasplot(stanres, dirname, filename,
+                   mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi,
+                   labels = labels, typeplot)
+    out <- list()
+    out$bi <- bi
+  } else if(typeplot != "ambient") {
       tr <- mytraceplot(stanres, dirname, filename, by = by, labels = labels)
       en <- energyplot(stanres, dirname, filename, pdf, ht = hten, wd = wden,
                        labels = labels, typeplot = typeplot)
@@ -82,13 +89,17 @@ plotstan <- function(typesim, stanres, dirname = NULL,
   } else {
     out <- list()
   }
-  pa <- pairsplot(stanres, dirname, filename, mat1, sources, cons, typeplot)
+
+  if(typeplot != "bias") {
+
   bi <- biasplot(stanres, dirname, filename,
-        mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi,
-        labels = labels, typeplot)
+                 mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi,
+                 labels = labels, typeplot)
+  pa <- pairsplot(stanres, dirname, filename, mat1, sources, cons, typeplot)
 
   out$pa <- pa
   out$bi <- bi
+  }
 
   out
 
@@ -347,7 +358,8 @@ mytraceplot <- function(stanres, dirname, filename, by = 5, labels = NULL) {
 #' @param mat1 Names of free elements of F
 #' @param sources Names of sources
 #' @export
-pairsplot <- function(stanres, dirname, filename, mat1, sources, cons, typeplot) {
+pairsplot <- function(stanres, dirname, filename, mat1,
+                      sources, cons, typeplot, cond1 = "energy") {
 
   if(typeplot != "ambient") {
     filename1 <- paste0(filename, "-pairs.pdf")
@@ -373,7 +385,7 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources, cons, typeplot)
     n1 <- 2
   }
   lab1 <- paste0(rep(musig, each = length(sources)), rep(sources, 2))
-  pairs(stanres$fit, pars = musig, labels = lab1, condition = "energy")
+  pairs(stanres$fit, pars = musig, labels = lab1, condition = cond1)
 
   # All vf
   types <- musig
@@ -395,7 +407,7 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources, cons, typeplot)
       lab1 <- c(first5, mat1[k : l])
       #print(lab1)
       pairs(stanres$fit, labels = lab1,
-            pars = c(types[j], paste0(vfn, "[", (k : l), "]")), condition = "energy")
+            pars = c(types[j], paste0(vfn, "[", (k : l), "]")), condition = cond1)
 
       k <- k + 6
     }
@@ -403,7 +415,7 @@ pairsplot <- function(stanres, dirname, filename, mat1, sources, cons, typeplot)
 
   lab1 <- paste0("sigmaeps-", cons)
   pairs(stanres$fit, labels = lab1,
-        pars = c(paste0("sigmaeps", append1)), condition = "energy")
+        pars = c(paste0("sigmaeps", append1)), condition = cond1)
 
   dev.off()
 
