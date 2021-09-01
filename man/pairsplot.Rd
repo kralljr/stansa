@@ -4,7 +4,16 @@
 \alias{pairsplot}
 \title{pairsplot}
 \usage{
-pairsplot(stanres, dirname, filename, mat1, sources, cons, typeplot)
+pairsplot(
+  stanres,
+  dirname,
+  filename,
+  mat1,
+  sources,
+  cons,
+  typeplot,
+  cond1 = "energy"
+)
 }
 \arguments{
 \item{stanres}{Output from runstan}

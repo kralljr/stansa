@@ -15,6 +15,8 @@
 #' @param htrh Height in inches of rhat pdf
 #' @param htbi Height in inches of bias pdf
 #' @param wden Width in inches of bias pdf
+#' @param typeplot Whether to plot local or ambient
+#' @param plot Whether to plot only bias
 #' @export
 plotstan <- function(typesim, stanres, dirname = NULL,
                      # only need defaults
@@ -22,7 +24,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
                      prof = prof, meansd = meansd, pdf = F,
                      # change heights for outputs
                      hten = 250, wden = 20, htrh = 100, htbi = 10, wdbi = 20,
-                     typeplot = "none") {
+                     typeplot = "none", plot = "bias") {
 
   # Get filename if not provisted
   if(is.null(filename)) {
@@ -73,7 +75,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
 
   # # Plots
 
-  if(typeplot == "bias") {
+  if(plot == "bias") {
     bi <- biasplot(stanres, dirname, filename,
                    mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi,
                    labels = labels, typeplot)
@@ -90,7 +92,7 @@ plotstan <- function(typesim, stanres, dirname = NULL,
     out <- list()
   }
 
-  if(typeplot != "bias") {
+  if(plot != "bias") {
 
   bi <- biasplot(stanres, dirname, filename,
                  mat1, prof, meansd, typesim, by = by, pdf, ht = htbi, wd = wdbi,

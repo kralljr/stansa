@@ -18,7 +18,8 @@ plotstan(
   htrh = 100,
   htbi = 10,
   wdbi = 20,
-  typeplot = "none"
+  typeplot = "none",
+  plot = "bias"
 )
 }
 \arguments{
@@ -45,6 +46,10 @@ plotstan(
 \item{htrh}{Height in inches of rhat pdf}
 
 \item{htbi}{Height in inches of bias pdf}
+
+\item{typeplot}{Whether to plot local or ambient}
+
+\item{plot}{Whether to plot only bias}
 }
 \description{
 \code{plotstan} Create plots for assessing stan diagnostic
