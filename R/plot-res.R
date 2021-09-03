@@ -389,8 +389,8 @@ pairsplot <- function(stanres, dirname, filename, mat1,
     append1 <- ""
     n1 <- 2
   }
-  lab1 <- paste0(rep(musig, each = length(sources)), rep(sources, 2))
-  pairs(stanres$fit, pars = musig, labels = lab1, condition = cond1)
+  lab1ms <- paste0(rep(musig, each = length(sources)), rep(sources, 2))
+  pairs(stanres$fit, pars = musig, labels = lab1ms, condition = cond1)
 
   # All vf
   types <- musig
@@ -419,8 +419,14 @@ pairsplot <- function(stanres, dirname, filename, mat1,
   }
 
   lab1 <- paste0("sigmaeps-", cons)
+  se1 <- c(paste0("sigmaeps", append1))
   pairs(stanres$fit, labels = lab1,
-        pars = c(paste0("sigmaeps", append1)), condition = cond1)
+        pars = se1, condition = cond1)
+
+
+  # add pairs of sigmaeps with sigmag
+  pairs(stanres$fit, pars = c(musig, se1), labels = c(lag1ms, lab1), condition = cond1)
+
 
   dev.off()
 
