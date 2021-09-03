@@ -40,7 +40,6 @@ plotstan <- function(typesim, stanres, dirname = NULL,
       keeps2 <- name2[grep("l", name2)]
       keeps2 <- keeps2[-which(keeps2 %in% c( "LBl2", "LBl1"))]
 
-
     } else {
       keeps <- name1[grep("a", name1)]
       keeps <- keeps[-which(keeps %in% c("sigmaepsl", "namesfl"))]
@@ -50,6 +49,10 @@ plotstan <- function(typesim, stanres, dirname = NULL,
       # use ambient truth
       typesim <- "ambient"
     }
+
+
+    temp <- stanres$dat$namesfl[which(stanres$standat$matchamb == 0), ]
+    stanres$mx <- paste(temp[, 2], temp[, 1], sep = "-")
 
     stanres$dat <- stanres$dat[keeps]
     nchar1 <- nchar(names(stanres$dat))
@@ -623,7 +626,7 @@ rhatplot <- function(stanres, dirname, filename, pdf = F, ht = 120) {
 
 #' \code{biasplot} Create energy plots for stan output
 #'
-#' @title energyplot
+#' @title biasplot
 #'
 #' @param stanres Output from runstan
 #' @param dirname Folder name where to save plots
@@ -718,6 +721,18 @@ biasplot <- function(stanres, dirname, filename,
            row = as.numeric(row),
            var1 = paste0("vF", append1),   truth = truth / sdscale * sd1) %>%
     dplyr::select(-sdscale) %>% na.omit()
+
+  if(typeplot == "local" & ("mx" %in% names(stanres))) {
+    f <- dplyr::filter(f, name %in% stanres$mx) %>%
+      dplyr::mutate(name = factor(name, levels = stanres$mx)) %>%
+      dplyr::arrange(name) %>%
+      dplyr::mutate(name = as.character(name)) %>%
+      dplyr::select(-row) %>%
+      tibble::rowid_to_column(., "row")
+
+    mat1 <- stanres$mx
+  }
+
   musigg <- dplyr::filter(meansd, type == typesim) %>%
     dplyr::select(-type) %>%
     dplyr::mutate(row = as.numeric(factor(source))) %>%
@@ -740,7 +755,8 @@ biasplot <- function(stanres, dirname, filename,
     # for lognormal? i not work
     # dplyr::mutate(truth = ifelse(var1 == "mug", truth + log(sd1)), truth) %>%
     dplyr::select(-sd1) %>%
-    dplyr::rename(name = source)
+    dplyr::rename(name = source) %>%
+    dplyr::mutate(var1 = ifelse(var1 %in% c("meang", "sdg"), paste0(var1, append1), var1))
   P <- unique(prof$poll) %>% length()
 
   se1 <- apply(mean1, 2, sd) / 10
@@ -753,7 +769,7 @@ biasplot <- function(stanres, dirname, filename,
 
   # Find posterior mean
 
-  gval <- dplyr::filter(params, var1 == "G") %>%
+  gval <- dplyr::filter(params, substr(var1, 1, 1) == "G") %>%
     dplyr::group_by(col) %>%
     dplyr::summarize(sdg= sd(mean), meang = mean(mean)) %>%
     dplyr::ungroup() %>%
@@ -762,9 +778,12 @@ biasplot <- function(stanres, dirname, filename,
                         names_to = "var1", values_to = "mean") %>%
     dplyr::rename(row = col)
 
-  gval1 <- dplyr::filter(gval, var1 %in% c("meang", "sdg"))
+  gval1 <- dplyr::filter(gval, var1 %in% c("meang", "sdg")) %>%
+    dplyr::mutate(var1 = ifelse(var1 %in% c("meang", "sdg"), paste0(var1, append1), var1))
   gval2 <- dplyr::filter(gval, !(var1 %in% c("meang", "sdg"))) %>%
-    dplyr::rename(truth = mean)
+    dplyr::rename(truth = mean) %>%
+    dplyr::mutate(var1 = ifelse(var1 %in% c("mug", "sigmag"), paste0(var1, append1), var1))
+
 
 
 
@@ -780,13 +799,20 @@ biasplot <- function(stanres, dirname, filename,
   mat1 <- labels$mat1[dat$varid]
   cons <- labels$cons[dat$varid]
 
+
+  if(typeplot == "local" & ("mx" %in% names(stanres))) {
+
+     mat1 <- stanres$mx[dat$varid]
+  }
+
   dat <- dplyr::mutate(dat, sources = sources, mat1 = mat1, cons = cons,
 
                  out = dplyr::case_when(var1 %in% c("sigmag", "mug", "G",
                                                        "sigmaga", "muga", "Ga",
-                                                       "sigmagl", "mugl", "Gl", "sdg", "meang") ~ sources,
-                                        var1 %in% c("nvF", "vF",
-                                                       "nvFa", "vFa") ~ mat1,
+                                                       "sigmagl", "mugl", "Gl", "sdg", "meang",
+                                                    "sdgl", "sdga", "meangl", "meanga") ~ sources,
+                                        var1 %in% c("nvF", "vF", "vFl",
+                                                       "nvFa", "vFa", "nvFl") ~ mat1,
                                         var1 %in% c("sigmaeps",
                                                        "sigmaepsa","sigmaepsl")~ cons),
                 varname1 = paste0(var1, varid2, "-", out))
