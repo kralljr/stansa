@@ -425,7 +425,7 @@ pairsplot <- function(stanres, dirname, filename, mat1,
 
 
   # add pairs of sigmaeps with sigmag
-  pairs(stanres$fit, pars = c(musig, se1), labels = c(lag1ms, lab1), condition = cond1)
+  pairs(stanres$fit, pars = c(musig, se1), labels = c(lab1ms, lab1), condition = cond1)
 
 
   dev.off()
