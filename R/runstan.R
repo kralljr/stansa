@@ -77,6 +77,7 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
                 ...)
 
     sum1 <- rstan::summary(fit)$summary
+    sum1 <- tibble::rownames_to_column(sum1, var = "var")
 
     if(names) {
     sum1 <- data.frame(sum1)
@@ -84,8 +85,9 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
     mat1 <- mat1fun(dat$stan, sources)
     cons <- dat$true$cons
     labels <- makelabels(cons, sources, mat1)
-    sum1 <- tibble::rownames_to_column(sum1, var = "var") %>%
-      dplyr::mutate(var = getnames(var, labels))
+    sum1 <-       dplyr::mutate(sum1, var = getnames(var, labels))%>%
+      # remove unnecessary components
+      dplyr::filter(!(var %in% c("lG0", "lG0a", "lG0l", "nvF", "nvFa", "nvFl")))
     }
   }
 
