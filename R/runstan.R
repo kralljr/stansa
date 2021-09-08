@@ -27,7 +27,7 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
                     chains = 1, findamb = NULL, notes = NULL, fp = NULL, names = F,...) {
 
   options(warn = 1)
-  con <- file(here("logs/warnings.log"))
+  con <- file(("logs/warnings.log"))
   sink(con, append=TRUE)
   sink(con, append=TRUE, type="message")
   cl <- paste0(match.call(), collapse = " ")
@@ -68,7 +68,7 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
     starttime1 <- gsub(" ", "-", starttime) %>% gsub(":", "", .)
     starttime1 <-
     loggr::log_file(
-      here(paste0("logs/mainstan-", typesim, "-", stantype, "-", starttime1,".log"))
+      (paste0("logs/mainstan-", typesim, "-", stantype, "-", starttime1,".log"))
       , subscriptions=c('message', 'warning','stop'),
       log_muffled = T
     )
@@ -115,8 +115,8 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
   meta <- data.frame(starttime = starttime, endtime = endtime, fp = fp, notes = notes, typesim = typesim, stancode = stancode,
                      sderr = sderr1, N = N, seeds = paste(seeds, collapse = ", "),
                      iter = iter, chains = chains, call = cl, log1 = log1, comments = "")
-  coln <- ifelse(file.exists(here("logs/sim-model-log.csv")), F, T)
-  write.table(meta, file = here("logs/sim-model-log.csv"),
+  coln <- ifelse(file.exists(("logs/sim-model-log.csv")), F, T)
+  write.table(meta, file = ("logs/sim-model-log.csv"),
               sep = ",", row.names = F, col.names = coln, append = T)
 
 
