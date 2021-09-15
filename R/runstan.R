@@ -77,6 +77,7 @@ runstan <- function(N, typesim, stancode = NULL, stantype = NULL,
                 ...)
 
     sum1 <- rstan::summary(fit)$summary
+    sum1 <- data.frame(sum1)
     sum1 <- tibble::rownames_to_column(sum1, var = "var")
 
     if(names) {
