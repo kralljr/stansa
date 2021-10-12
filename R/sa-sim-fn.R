@@ -100,7 +100,7 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
   # Get G
   g1 <- geng(meansd0, N, rmout, log = log1) %>%
     tidyr::pivot_longer(-id) %>%
-    dplyr::full_join(scales1) %>%
+    dplyr::full_join(scales) %>%
     dplyr::mutate(value = value * val) %>%
     dplyr::select(-val) %>%
     tidyr::pivot_wider() %>%
