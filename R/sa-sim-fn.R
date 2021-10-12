@@ -69,6 +69,11 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
   meansd0 <- dplyr::filter(meansd0, type == typesim) %>%
     dplyr::select(., -type)
 
+  # fix scaling for G (units of ref pollutant): add 12/1/2020
+  scales <- dplyr::filter(prof, constraint == 1) %>%
+    dplyr::select(source, val, type) %>%
+    dplyr::filter(type == typesim) %>%
+    rename(name = source)
 
   # Format profiles: Keep 1 scale
   prof1 <- dplyr::filter(prof0, type == typesim) %>%
@@ -93,7 +98,15 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
   P <- ncol(f1) - 1
 
   # Get G
-  g1 <- geng(meansd0, N, rmout, log = log1)
+  g1 <- geng(meansd0, N, rmout, log = log1) %>%
+    tidyr::pivot_longer(-id) %>%
+    dplyr::full_join(scales1) %>%
+    dplyr::mutate(value = value * val) %>%
+    dplyr::select(-val) %>%
+    tidyr::pivot_wider() %>%
+    dplyr::select(-c(type))
+
+
   #alphabetize by source
   cn <- colnames(g1)[-which(colnames(g1) == "id")] %>% sort()
   g1 <- g1[, c("id", cn)]
