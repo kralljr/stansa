@@ -73,7 +73,7 @@ simdat1 <- function(typesim = "ambient", N = 100, prof0 = prof,
   scales <- dplyr::filter(prof, constraint == 1) %>%
     dplyr::select(source, val, type) %>%
     dplyr::filter(type == typesim) %>%
-    rename(name = source)
+    dplyr::rename(name = source)
 
   # Format profiles: Keep 1 scale
   prof1 <- dplyr::filter(prof0, type == typesim) %>%
